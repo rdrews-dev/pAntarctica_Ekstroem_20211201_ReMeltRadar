@@ -1,0 +1,55 @@
+\documentclass[a4paper,12pt,twoside]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{fancyhdr}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[LE,RO]{Report version: \today}
+\fancyhead[RE,LO]{ReMeltRadar 2021/22}
+\fancyfoot[CE,CO]{\leftmark}
+\fancyfoot[LE,RO]{\thepage}
+\usepackage{array,booktabs}
+\usepackage{graphicx}
+\renewcommand{\headrulewidth}{2pt}
+\renewcommand{\footrulewidth}{1pt}
+
+%Table stuff
+\usepackage[table]{xcolor}
+\setlength{\arrayrulewidth}{1mm}
+\setlength{\tabcolsep}{18pt}
+\renewcommand{\arraystretch}{1.5}
+%\arrayrulecolor[HTML]{fffff}
+
+%% Colors
+\definecolor{babyblueeyes}{rgb}{0.63, 0.79, 0.95}
+\definecolor{beaublue}{rgb}{0.74, 0.83, 0.9}
+\definecolor{bluegray}{rgb}{0.4, 0.6, 0.8}
+
+\newcommand{\ProtocolTable}[6]
+{
+\begin{table}[]
+\begin{tabular}{|p{1.8cm} p{3.8cm} p{1.8cm} p{2.0cm}|}
+\hline
+ \rowcolor{beaublue}\textbf{Name}:&\multicolumn{3}{l}{#1} \\
+ \rowcolor{beaublue}\textbf{Folder:}&\multicolumn{3}{l}{#2} \\
+ \rowcolor{beaublue}\textbf{Instrument:}&#3&\textbf{Date:}&#4 \\
+  \rowcolor{beaublue}\textbf{Operator:}&#5&\textbf{Location:}&#6\\
+\hline
+\end{tabular}
+\end{table}
+}
+
+
+
+\begin{document}
+testasfdsaf 
+\ProtocolTable{Setup PulseEkko Radar}{N/A}{PulseEkko 50 MHz}{N/A}{I. Koch}{N/A}
+
+\begin{minipage}[t]{\textwidth}
+\includegraphics[width=\textwidth]{Pics/PulseEkko/RadarSetup.png}
+\end{minipage}
+
+
+
+\end{document}
