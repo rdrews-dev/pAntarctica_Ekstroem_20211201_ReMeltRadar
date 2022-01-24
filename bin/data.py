@@ -14,7 +14,6 @@ import argparse
 import csv
 import datetime
 import logging
-from msilib.schema import File
 import os
 import pathlib
 
@@ -122,7 +121,7 @@ class Catalogue:
     def __contains__(self, item):
         # Iterate over files and if matched, return true, otherwise return False
         for file in self.files:
-            if item == file:
+            if item.filename == file.filename:
                 return True
         return False
 
@@ -187,6 +186,7 @@ class Catalogue:
                         self.files.append(file_record)
                         logger.info(f"Added {file_record.path} to catalogue")
                     else:
+                        file_record.catalogued = True
                         logger.warning(f"File {file_record.path} already found in catalogue {self.path}")
             elif file_path.is_dir() and subfolders:
                 logger.debug(f"Going into subfolder {file_path}")
@@ -254,66 +254,19 @@ def traverse(start_path, subfolders=False, logger_name=__file__):
     logger = logging.getLogger(logger_name);
 
     logger.info(f"Opening top-level catalogue at path {start_path}")
+    
+    # Create top-level catalogue
     top_cat = Catalogue(start_path, logger_name=logger_name)
+
     if subfolders:
         logger.info(f"Reading file system and subfolders within {start_path}")
     else:
         logger.info(f"Reading top-level directory only within {start_path}")
+    
+    # Read file-system from top-level directory
     top_cat.read_from_file_system(subfolders)
-
-    logger.info(f"Printing non-catalogued files in {start_path}")
-    for f in top_cat.get_non_catalogued_files():
-        logger.info(f"\t{f.path}")
-
-    # # Now iterate over dir_stack until empty
-    # while len(dir_stack) > 0:
-        
-    #     # Get last element of the stack
-    #     catalogue = dir_stack.pop()
-    #     catalogue.load_from_file_system(logger_name=logger_name)
-
-    #     logger.info(f"Reading {catalogue.path}")
-
-    #     if catalogue.exists():
-    #         logger.debug(f"I am aware of {len(catalogue.files)} files in {catalogue.path}")
-    #     else:
-    #         logger.debug(f"I couldn't find {catalogue.path} - maybe it doesn't exist")
-
-    #     # Push to catalogue
-    #     cat_stack.append(catalogue)
-        
-
-
-        # # Now read files in the current directory
-        # for file in os.listdir(catalogue.path.parent):
-        #     f_path = catalogue.path.parent / file
-        #     if pathlib.Path(f_path).is_dir() and args.subfolders:
-        #         # Must be a subfolder - so if we are using subfolders then
-        #         # add it to the directory stack
-        #         logger.debug(f"Adding subfolder: {f_path}")
-        #         dir_stack.append(Catalogue(f_path / "catalogue.csv"))
-        #     elif f_path.is_file() and file.lower() != "catalogue.csv":
-        #         # Append file to file stack
-        #         logger.debug(f"Appending file to stack {f_path}")
-        #         file_stack.append(FileRecord.from_path(f_path))
-
-        # logger.debug("File stack")
-        # logger.debug("----------")
-        # for file in file_stack:
-        #     logger.debug(file.filename)
-        # logger.debug("----------")
-
-        # # Now iterate through the catalogue
-        # for file in catalogue.files:
-        #     f_path = file.filename
-        #     logger.debug(f"Searching for {f_path} in file_stack")
-        #     if f_path in file_stack:
-        #         file_stack.pop(file_stack.index(f_path))
-        #     else:
-        #         missing_stack.append(file)
-
-    # Return stack objects
-    return missing_stack, file_stack, missing_cat
+    
+    return top_cat
 
 def do_report(args):
     
@@ -358,8 +311,33 @@ def do_report(args):
     logger.info("-- START TEST --")
     logger.info("")
 
-    # Getting missing file and missing catalogue stack
-    exist_in_cat, exist_in_fs, missing_cat = traverse(args.path, subfolders=args.subfolders, logger_name="data_report")
+    # Get catalogue of files
+    cat = traverse(args.path, subfolders=args.subfolders, logger_name="data_report")
+
+    missing_files = []
+    missing_catalogue = []
+    missing_cat_entries = []
+
+    # Iterate over catalogues
+    cat_stack = [cat]
+    while len(cat_stack) > 0:
+        # Get current catalogue
+        c_cat = cat_stack.pop()
+        # Append catalogues within current catalogue if they exist
+        for new_cat in c_cat.catalogues:
+            cat_stack.append(new_cat)
+        
+        # With current catalogue, get catalogue files that do not exist
+        if not c_cat.path.is_file():
+            missing_catalogue.append(c_cat)
+
+        # then get data files that don't exist
+        for file in c_cat.get_non_existent_files():
+            missing_files.append(file)
+
+        # then get catalogue entries that do not exist (i.e. found a file but not cat entry)
+        for file in c_cat.get_non_catalogued_files():
+            missing_cat_entries.append(file)
 
     logger.info("")
     logger.info("-- END TEST -- ")
@@ -368,17 +346,17 @@ def do_report(args):
     logger.info("")
 
     # Print remaining files
-    if len(exist_in_fs) > 0:
-        logger.warning(f"The following {len(exist_in_fs)} files were found in the file system but not recorded in the catalogues:")
-        for file in exist_in_fs:
+    if len(missing_cat_entries) > 0:
+        logger.warning(f"The following {len(missing_cat_entries)} files were found in the file system but not recorded in the catalogues:")
+        for file in missing_cat_entries:
             logger.info(f"\t{file.path}")
     
     logger.info("")
 
     # Print missing files
-    if len(exist_in_cat) > 0:
-        logger.warning(f"The following {len(exist_in_cat)} files were found in the catalogues but not recorded in the file system:")
-        for file in exist_in_cat:
+    if len(missing_files) > 0:
+        logger.warning(f"The following {len(missing_files)} files were found in the catalogues but not recorded in the file system:")
+        for file in missing_files:
             logger.info(f"\t{file.path}")
 
     with open(report_name, 'w') as fh:
@@ -395,10 +373,10 @@ def do_report(args):
             f"- Generated `{timestring}`\n\n",
             "-"*80 + "\n\n"
             f"## Report Summary\n\n", 
-            f"- Missing catalogues: `{len(missing_cat)}`\n",
-            f"- Missing files: `{len(exist_in_cat) + len(exist_in_fs)}`\n",
-            f"  - of which on file system but not catalogued   : `{len(exist_in_fs)}`\n",
-            f"  - of which in catalogue but not on file system : `{len(exist_in_cat)}`\n",
+            f"- Missing catalogues: `{len(missing_catalogue)}`\n",
+            f"- Missing files: `{len(missing_files) + len(missing_cat_entries)}`\n",
+            f"  - of which on file system but not catalogued   : `{len(missing_cat_entries)}`\n",
+            f"  - of which in catalogue but not on file system : `{len(missing_files)}`\n",
             "\n", 
             "-"*80 + "\n\n",
             f"## Report Details\n\n"
@@ -408,25 +386,25 @@ def do_report(args):
         fh.write("These files should be available on the Git repository.\n")
         fh.write("Have you pulled from the main branch recently?\n\n")
         fh.write("```text\n")
-        for path in missing_cat:
-            fh.write(f"{path}\n")
+        for cat in missing_catalogue:
+            fh.write(f"{cat.path}\n")
         fh.write("```\n\n")
 
         fh.write("### Missing Files on System\n\n")
         fh.write("These files are present in the `catalogue.csv` files that were found but not on your file system.\n")
         fh.write("You will need to download these files separately and request from colleagues.\n\n")
         fh.write("```text\n")
-        for file in exist_in_cat:
+        for file in missing_files:
             fh.write(f"{file.path}\n")
         fh.write("```\n\n")
 
         fh.write("### Missing Files in Catalogue\n\n")
         fh.write("These files are present on your file system but not in `catalogue.csv` for the folder that contains them.\n")
         fh.write("If these files should be shared data then you need to update `catalogue.csv` manually or automatically\n")
-        fh.write(f"using the `bin/data.py -u {path}` command.\n")
+        fh.write(f"using the `bin/data.py -u {args.path}` command.\n")
         fh.write("If the file does not need to be shared you can ignore the warning.\n\n")
         fh.write("```text\n")
-        for file in exist_in_fs:
+        for file in missing_cat_entries:
             fh.write(f"{file.path}\n")
         fh.write("```\n")
 
