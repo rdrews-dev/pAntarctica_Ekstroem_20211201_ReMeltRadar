@@ -5,7 +5,8 @@
 #
 #   Change Log:
 #   ---------------------------------------------------------------------------
-#   2022-01-24: Separate reports from log files and bug fixes.
+#   2022-01-24: Add markdown report generation and update backend to ensure 
+#               files are correctly marked as missing or catalogued.
 #   2022-01-13: Created.
 #
 #   
@@ -148,7 +149,7 @@ class Catalogue:
                     header_map[col_index] = header_name
                 # otherwise error
                 else:
-                    raise ValueError(f"Invalid header name {header_name} in {path}.")
+                    raise ValueError(f"Invalid header name {header_name} in {self.path}.")
                 col_index += 1
             # Now read rows of CSV file
             for row in cat_reader:
