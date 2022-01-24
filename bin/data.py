@@ -13,6 +13,7 @@ import argparse
 import csv
 import datetime
 import logging
+from msilib.schema import File
 import os
 import pathlib
 
@@ -26,32 +27,106 @@ class FileRecord:
         "comment"
     ]
 
-class Catalogue:
+    def __init__(self):
+        # Assign None to all field values
+        for field in self.FIELDS:
+            setattr(self, field, None)
 
-    FIELDS = [
-        "filename",
-        "size",
-        "owner",
-        "date_added",
-        "comment"
-    ]
+    def __eq__(self, other_file):
+        # Behaviour for equal is that True is returned if filename and size match
+        if isinstance(other_file, FileRecord):
+            return (
+                    self.filename == other_file.filename
+                and self.size == other_file.size
+            )
+        else:
+            TypeError("comparison must be made with another FileRecord object")
+
+    def __ne__(self, other_file):
+        return not self.__eq__(other_file)
+
+    def __lt__(self, other_file):
+        if isinstance(other_file, FileRecord):
+            return (
+                    self.filename == other_file.filename
+                and self.size < other_file.size
+            )
+        else:
+            TypeError("comparison must be made with another FileRecord object")
+
+    def __gt__(self, other_file):
+        if isinstance(other_file, FileRecord):
+            return (
+                    self.filename == other_file.filename
+                and self.size > other_file.size
+            )
+        else:
+            TypeError("comparison must be made with another FileRecord object")
+        
+    @staticmethod
+    def from_csv_row(header, values):
+
+        # Check header and values are same length
+        if len(header) != len(values):
+            raise ValueError("header and values must have the same number of elements.")
+
+        # Create new record
+        new_file = FileRecord()
+
+        # Iterate over fields
+        for k in range(len(values)):
+            setattr(new_file,header[k],values[k])
+
+        return new_file
+
+    @staticmethod
+    def from_path(path):
+
+        # Cast to pathlib.Path object if we haven't already been passed one
+        if not isinstance(path, pathlib.Path):
+            path = pathlib.Path(path);
+
+        # Check file exists
+        if not path.exists():
+            raise FileNotFoundError(path)
+
+        if not path.is_file():
+            raise ValueError("path must point to a file-like object.")
+
+        file_record = FileRecord()
+
+        # Now load fields
+        file_record.filename = path.parts[-1]
+        file_record.date_added = datetime.datetime.utcfromtimestamp(path.stat().st_mtime)
+        try:
+            file_record.owner = path.owner()
+        except NotImplementedError:
+            file_record.owner = ""
+        file_record.size = path.stat().st_size
+        file_record.comment = ""
+
+class Catalogue:
 
     def __init__(self, path):
         
         # Initialise variables
-        self.filename = []
-        self.size = []
-        self.owner = []
-        self.date_added = []
-        self.comment = []
+        self.files = []
+        self.path = path
 
         # Load catalogue from CSV
-        self.load_from_csv(path)
+        if path.is_file():
+            logger = logging.getLogger("data_report")
+            logger.debug(f"Path {path} exists, loading from CSV.")
+            self.load_from_csv(path)
 
     def load_from_csv(self, path):
 
+        # Check whether catalogue.csv file path exists
         if not path.is_file():
-            return
+            # Try to find catalogue.csv
+            path = path / "catalogue.csv";
+            if not path.is_file():
+                raise FileNotFoundError(path)
 
         with open(path, 'r') as cat_file:
             cat_reader = csv.reader(cat_file)
@@ -64,7 +139,7 @@ class Catalogue:
             # Check each header and validate
             for header_name in header:
                 # If valid store in map
-                if header_name in self.FIELDS:
+                if header_name in FileRecord.FIELDS:
                     header_map[col_index] = header_name
                 # otherwise error
                 else:
@@ -74,9 +149,8 @@ class Catalogue:
             # Now when we read from files we can use the header_map to 
             # select the correct column to read from
             for row in cat_reader:
-                # Iterate over each item in the row
-                for k in range(len(row)):
-                    getattr(self,header_map[k]).append(row[k])
+                # Read file from row
+                self.files.append(FileRecord.from_csv_row(header_map, row))
 
 
 def arg_validate_date(datestr):
@@ -114,7 +188,7 @@ def do_report(args):
     # Assign handler
     logger.addHandler(log_file_handler)
     # and set level to INFO - this means we can keep debug messages if we like
-    logger.setLevel(logging.INFO)
+    logger.setLevel(logging.DEBUG)
 
     # Create a directory stack to store catalogue/directory locations
     dir_stack = []
@@ -124,8 +198,8 @@ def do_report(args):
     missing_stack = []
 
     # Add root to dir_stack 
-    dir_stack.append(args.path)
-
+    dir_stack.append(Catalogue(args.path))
+    
     # Variable to track maximum file path
     max_file_path = 0
 
@@ -144,27 +218,25 @@ def do_report(args):
     while len(dir_stack) > 0:
         
         # Get last element of the stack
-        c_path = dir_stack.pop()
-        cat_path = c_path / "catalogue.csv"
+        catalogue = dir_stack.pop()
 
-        logger.info(f"Reading {cat_path}")
+        logger.info(f"Reading {catalogue.path}")
 
         # Read the catalogue to know what files we should expect to see
-        catalogue = Catalogue(cat_path)
-        logger.debug(f"I am aware of {len(catalogue.filename)} files in {c_path}")
+        logger.debug(f"I am aware of {len(catalogue.files)} files in {catalogue.path}")
 
         # Now read files in the current directory
-        for file in os.listdir(c_path):
-            f_path = c_path / file
+        for file in os.listdir(catalogue.path.parent):
+            f_path = catalogue.path / file
             if not f_path.is_file() and args.subfolders:
                 # Must be a subfolder - so if we are using subfolders then
                 # add it to the directory stack
-                dir_stack.append(f_path)
+                dir_stack.append(Catalogue(f_path / "catalogue.csv"))
             elif f_path.is_file() and file.lower() != "catalogue.csv":
                 # Append file to file stack
-                file_stack.append(f_path)
-                if len(f_path) > max_file_path:
-                    max_file_path = len(f_path)
+                file_stack.append(FileRecord.from_path(f_path))
+                if len(str(f_path)) > max_file_path:
+                    max_file_path = len(str(f_path))
 
         logger.debug("File stack")
         logger.debug("----------")
@@ -173,14 +245,15 @@ def do_report(args):
         logger.debug("----------")
 
         # Now iterate through the catalogue
-        for file in catalogue.filename:
-            logger.debug(f"Searching for {c_path / file}")
-            if c_path / file in file_stack:
-                file_stack.pop(file_stack.index(c_path / file))
+        for file in catalogue.files:
+            f_path = catalogue.path / file.filename
+            logger.debug(f"Searching for {f_path}")
+            if f_path in file_stack:
+                file_stack.pop(file_stack.index(f_path))
             else:
-                missing_stack.append(c_path / file)
-                if len(c_path / file) > max_file_path:
-                    max_file_path = len(c_path / file)
+                missing_stack.append(file)
+                if len(str(f_path)) > max_file_path:
+                    max_file_path = len(str(f_path))
 
     logger.info("")
     logger.info("-- END TEST -- ")
