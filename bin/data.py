@@ -5,6 +5,8 @@
 #
 #   Change Log:
 #   ---------------------------------------------------------------------------
+#   2022-01-25: Note that there is a bug where lines are duplicated if the 
+#               CSV file does not end with a new line.
 #   2022-01-24: Add markdown report generation and update backend to ensure 
 #               files are correctly marked as missing or catalogued.
 #   2022-01-13: Created.
@@ -105,6 +107,7 @@ class Catalogue:
         self.path = path
         self.files = []
         self.catalogues = []
+        self.header_map = {}
 
         # Assign logger name
         self.__logger_name = logger_name
@@ -121,6 +124,9 @@ class Catalogue:
 
     def __contains__(self, item):
         # Iterate over files and if matched, return true, otherwise return False
+        if not isinstance(item, FileRecord):
+            return False
+
         for file in self.files:
             if item.filename == file.filename:
                 return True
@@ -139,31 +145,39 @@ class Catalogue:
             # Create CSV reader
             cat_reader = csv.reader(cat_file)
             header = cat_reader.__next__()
-            header_map = {}
+            self.header_map = {}
             #Store column index
             col_index = 0
             # Check each header and validate
             for header_name in header:
                 # If valid store in map
                 if header_name in FileRecord.FIELDS:
-                    header_map[col_index] = header_name
+                    self.header_map[col_index] = header_name
                 # otherwise error
                 else:
                     raise ValueError(f"Invalid header name {header_name} in {self.path}.")
                 col_index += 1
             # Now read rows of CSV file
+            logger.info(f"Reading from {self.path}")
             for row in cat_reader:
-                file_record = self.file_record_from_csv(row, header_map)
-                if not file_record in self:
+                file_record = self.file_record_from_csv(row, self.header_map)
+                if not file_record in self and file_record != None:
                     self.files.append(file_record)
-                else:
+                elif file_record != None:
                     logger.warning(f"File {file_record.path} already found in catalogue {self.path}")
 
     def file_record_from_csv(self, row, header_map):
+
+        logger = logging.getLogger(self.__logger_name)
+
+        if len(row) != len(header_map):
+            logger.error(f"Mismatch with row length ({len(row)}) and header length ({len(header_map)}). Skipping '{','.join(row)}'") 
+            return
+
         # Assume that the directory for the catalogue is the parent directory
         file_record = FileRecord()
         # Iterate over values
-        for k in range(len(row)):
+        for k in range(len(header_map)):
             setattr(file_record, header_map[k], row[k])
         # Assign path to file record from catalogue
         file_record.path = self.path.parent / file_record.filename
@@ -269,6 +283,39 @@ def traverse(start_path, subfolders=False, logger_name=__file__):
     
     return top_cat
 
+def get_missing_items_from_catalogue(cat):
+    
+    missing_files = []
+    missing_catalogue = []
+    missing_cat_entries = []
+
+    # Iterate over catalogues
+    cat_stack = [cat]
+    while len(cat_stack) > 0:
+        # Get current catalogue
+        c_cat = cat_stack.pop()
+        # Append catalogues within current catalogue if they exist
+        for new_cat in c_cat.catalogues:
+            cat_stack.append(new_cat)
+        
+        # With current catalogue, get catalogue files that do not exist
+        if not c_cat.path.is_file():
+            missing_catalogue.append(c_cat)
+
+        # then get data files that don't exist
+        for file in c_cat.get_non_existent_files():
+            missing_files.append(file)
+
+        # then get catalogue entries that do not exist (i.e. found a file but not cat entry)
+        for file in c_cat.get_non_catalogued_files():
+            missing_cat_entries.append(file)
+
+    return {
+        'files' : missing_files,
+        'catalogues' : missing_catalogue,
+        'entries' : missing_cat_entries
+    }
+
 def do_report(args):
     
     # Check report name
@@ -315,30 +362,10 @@ def do_report(args):
     # Get catalogue of files
     cat = traverse(args.path, subfolders=args.subfolders, logger_name="data_report")
 
-    missing_files = []
-    missing_catalogue = []
-    missing_cat_entries = []
-
-    # Iterate over catalogues
-    cat_stack = [cat]
-    while len(cat_stack) > 0:
-        # Get current catalogue
-        c_cat = cat_stack.pop()
-        # Append catalogues within current catalogue if they exist
-        for new_cat in c_cat.catalogues:
-            cat_stack.append(new_cat)
-        
-        # With current catalogue, get catalogue files that do not exist
-        if not c_cat.path.is_file():
-            missing_catalogue.append(c_cat)
-
-        # then get data files that don't exist
-        for file in c_cat.get_non_existent_files():
-            missing_files.append(file)
-
-        # then get catalogue entries that do not exist (i.e. found a file but not cat entry)
-        for file in c_cat.get_non_catalogued_files():
-            missing_cat_entries.append(file)
+    missing_items = get_missing_items_from_catalogue(cat)
+    missing_catalogue = missing_items['catalogues']
+    missing_files = missing_items['files']
+    missing_cat_entries = missing_items['entries']
 
     logger.info("")
     logger.info("-- END TEST -- ")
@@ -457,17 +484,18 @@ def do_update(args):
     logger.info("-- START TEST --")
     logger.info("")
 
-    exist_in_cat, exist_in_fs, missing_cat = traverse(args.path, subfolders=args.subfolders, logger="data_update")
+    # Get catalogue for path specified in cmd line
+    cat = traverse(args.path, subfolders=args.subfolders, logger_name="data_update")
 
-    # We're only interested in missing_cat and exist_in_fs
-    
+    missing_items = get_missing_items_from_catalogue(cat)
+
     # Create catalogues
-    for cat_path in missing_cat:
-        logger.info(f"Creating new file at {cat_path}")
-        create_catalogue(cat_path)
+    for catalogue in missing_items['catalogues']:
+        logger.info(f"Creating new file at {catalogue.path}")
+        create_catalogue(catalogue.path)
 
     # Now iterate over missing files
-    for file in exist_in_fs:
+    for file in missing_items['entries']:
         # Get path to catalogue
         cat_path = file.path.parent / "catalogue.csv"
         # Create catalogue if it doesn't exist
@@ -475,8 +503,10 @@ def do_update(args):
             logger.warning(f"Somehow we have missed the catalogue at {cat_path}")
             create_catalogue(cat_path)
         # Otherwise we'll open the file and write our record
-        with open(cat_path, 'a') as fh:
-            cat_obj = Catalogue(cat_path, header_only=True)
+        with open(cat_path, 'a', newline='') as fh:
+            # Create csvwriter object
+        
+            cat_obj = Catalogue(cat_path)
             # Now iterate over fields in header map
             n_fields = len(cat_obj.header_map)
             # Check owner exists
@@ -499,11 +529,19 @@ def do_update(args):
 
             file.size = file.path.stat().st_size
 
-            for idx in range(n_fields-1):
-                fh.write(f"{getattr(file,cat_obj.header_map[idx])},")
+            # Go back one character - check if it is \n or \r and if not then write 
+            # a new line and continue
+            # fh.seek(1, 1)
+            # last_char = fh.read(1)
+            # if not last_char in ['\n', '\r']:
+            #     fh.write('\n')
+
+            csv_write = csv.writer(fh, delimiter=",")
+            row_to_write = []
+            for idx in range(n_fields):
+                row_to_write.append(str(getattr(file,cat_obj.header_map[idx])))
             # Increment 
-            idx = idx + 1
-            fh.write(f"{getattr(file,cat_obj.header_map[idx])}\n")
+            csv_write.writerow(row_to_write)
         
 
     logger.info("-"*80)
