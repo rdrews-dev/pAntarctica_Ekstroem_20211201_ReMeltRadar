@@ -1,0 +1,99 @@
+% -----------------------------------------------------------------------------
+% Created:      2022-01-27
+% Description:  Write-up of JH notebook and file log
+%
+% Requires:     csvsimple 
+% -----------------------------------------------------------------------------
+
+\documentclass[a4paper]{article}
+
+\usepackage{xcolor}
+
+% csvsimple package is required to load text from CSV files into tabular form
+\usepackage{csvsimple}
+\usepackage{xstring}
+\usepackage{colortbl}
+\usepackage{hyperref}
+
+% array package for column modifications (emphasis)
+\usepackage{array}
+
+\usepackage{tikz}
+
+\newcommand\hfaprestable[9]{
+    % Arguments
+    %   1 - filename
+    %   2 - number of sub bursts
+    %   3 - number of attenuator settings
+    %   4 - AF gain (list)
+    %   5 - RF attenuator (list)
+    %   6 - lower frequency
+    %   7 - upper frequency
+    %   8 - chirp period
+    %   9 - location
+    %  10 - comments
+    \def\temphftfolder{#1}
+    \def\temphftfilename{#2}%
+    \def\temphftsubbursts{#3}%
+    \def\temphftnoattn{#4}
+    \def\temphftaf{#5}%
+    \def\temphftrf{#6}%
+    \def\temphftlowfreq{#7}%
+    \def\temphftupfreq{#8}%
+    \def\temphftchirp{#9}%
+    \hfaprestablecont
+}
+
+\newcommand{\afrftable}[1]{& #1}
+\newcommand{\hfaprestablemcol}[1]{%
+    % \multicolumn{4}{p{9cm}}{#1}%
+    {#1}
+}
+\newcommand{\hfaprestablecont}[3]{
+    \def\temphftlocation{#1}%
+    \def\temphftcomment{#2}%
+    \begin{table}[h]
+        \centering
+        \renewcommand{\arraystretch}{1.5}%
+        \begin{tabular}{>{\columncolor{gray!10}}l p{9cm}}%
+            \hline%
+            \textbf{Folder} & \hfaprestablemcol{\ttfamily\url{\temphftfolder}} \\ % filename
+            \textbf{Filename} & \hfaprestablemcol{\ttfamily\temphftfilename} \\ % filename
+            \hline%
+            Subbursts & \hfaprestablemcol{\temphftsubbursts} \\ %
+            Attenuator Settings & \hfaprestablemcol{\temphftnoattn} \\ %
+            AF Gain (dB) & 
+            % \begin{tabular}{l l l l}
+                \StrSubstitute{\temphftaf}{,}{, } \\%
+            % \end{tabular}
+            RF Attenuation (dB) & \StrSubstitute{\temphftrf}{,}{, } \\%
+            \hline %
+            Bandwidth ($B$) & \hfaprestablemcol{\temphftlowfreq~MHz to \temphftupfreq~MHz} \\ %
+            Chirp Period ($T$) & \hfaprestablemcol{\temphftchirp~s} \\ %
+            \hline %
+            Location & \hfaprestablemcol{\temphftlocation} \\ %
+            \hline %
+            Comments & \hfaprestablemcol{\temphftcomment} \\ %
+            \hline %
+        \end{tabular} %
+        \caption{File summary for \texttt{\temphftfilename}.}
+        \label{tab:#3}
+    \end{table}
+    \clearpage
+}
+
+% -----------------------------------------------------------------------------
+% Title
+\title{\textbf{Notebook Summary for HF ApRES Experiments}}
+\author{J.D.~Hawkins}
+
+\begin{document}
+
+    \maketitle
+    
+    \newpage
+
+    \section{Testing}
+    \input{Files/Testing.tex}
+
+\end{document}
