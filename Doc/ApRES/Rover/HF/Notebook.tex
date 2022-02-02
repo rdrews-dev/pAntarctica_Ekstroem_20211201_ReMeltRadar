@@ -7,12 +7,11 @@
 
 \documentclass[a4paper]{article}
 
-\usepackage{xcolor}
 
 % csvsimple package is required to load text from CSV files into tabular form
 \usepackage{csvsimple}
 \usepackage{xstring}
-\usepackage{colortbl}
+\usepackage[table]{xcolor}
 \usepackage{hyperref}
 
 % array package for column modifications (emphasis)
@@ -83,6 +82,24 @@
 }
 
 % -----------------------------------------------------------------------------
+% Define command for database defintion tables
+\newcommand{\sqlspectable}[2]{
+    \begin{table}[h!]
+        \centering
+        \renewcommand{\arraystretch}{1.5}
+        \rowcolors{2}{gray!10}{white}
+        \begin{tabular}{l l p{3cm} >{\raggedright\arraybackslash}p{4cm}}
+            \hline
+            \textbf{Fieldname} & \textbf{Datatype} & \textbf{Parameters} & \textbf{Description}\\
+            \hline
+            #1
+            \hline
+        \end{tabular}
+        \caption{#2}
+    \end{table}
+}
+
+% -----------------------------------------------------------------------------
 % Title
 \title{\textbf{Notebook Summary for HF ApRES Experiments}}
 \author{J.D.~Hawkins}
@@ -93,7 +110,152 @@
     
     \newpage
 
+    \tableofcontents
+
+    \newpage
+
+    \section{Database Structure}
+
+    \subsection{Table `\texttt{measurements}'}
+    \sqlspectable{
+        %
+        measurement\_id & INTEGER & PRIMARY KEY & 
+        Unique identifier for each file. \\
+        %
+        filename & TEXT & NOT NULL & 
+        Filename without path. \\
+        %
+        path & TEXT & UNIQUE NOT NULL&
+        Path to file in UNIX form, relative to top-level project root. \\
+        %
+        name & TEXT & - &
+        The name associated with the measurement, used to group sets of 
+        measurements together. \\
+        %
+        time & TEXT & UNIQUE ASC NOT NULL &
+        \texttt{YYYY-MM-DD HH:MM:SS.SSS} formatted timestamp according to
+        time and date the measurement was taken. \\
+        %
+        location & TEXT & - & 
+        Measurement location name. \\
+        % 
+        comments & TEXT & - &
+        Description and comments for measurement if relevant. \\
+        % 
+        latitude & REAL & - &
+        Latitude of measurement location if known. \\
+        %
+        longitude & REAL & - & 
+        Longitude of measurement location if known. \\
+        %
+        elevation & REAL & - & 
+        Elevation of measurement location if known (referenced to WGS84). \\
+    }
+    {Specification for \texttt{measurements} table.}
+    
+    
+    \newpage
+
+    \subsection{Table `\texttt{apres\_metadata}'}
+    The fields \texttt{id} and \texttt{burst\_id} make a unique pair to ensure
+    that each burst within a \texttt{*.dat} file is only represented once.
+
+    \sqlspectable{
+        %
+        id & INTEGER & PRIMARY KEY & 
+        Unique identifier for metadata.  Distinct from \texttt{measurement\_id}
+        in that each \texttt{*.dat} file can have multiple bursts.\\
+        %
+        burst\_id & INTEGER & NOT NULL &
+        Identifies the burst within a \texttt{*.dat} the metadata represents.\\
+        %
+        measurement\_id & INTEGER & NOT NULL & 
+        Identifies the file record where the metadata originates from. \\
+        \hline
+        \multicolumn{4}{c}{\textit{ApRES Specific Metadata}} \\
+        \hline
+        %
+        n\_attenuators & INTEGER & CHECK(\textgreater 0, \textless 5) & 
+        Number of attenuator settings used. \\
+        %
+        n\_chirps & INTEGER & CHECK(\textgreater 0) & 
+        Total number of individual chirps in file. \\
+        %
+        n\_subbursts & INTEGER & CHECK(\textgreater 0) &
+        Number of sub-bursts (repeats) of the burst configuration. \\
+        %
+        period & REAL & NOT NULL & 
+        Chirp period in seconds. \\
+        %
+        f\_lower & REAL & NOT NULL &
+        Lower bound of chirp ramp in Hertz. \\
+        %
+        f\_upper & REAL & NOT NULL & 
+        Upper bound of chirp ramp in Hertz. \\
+        %
+        af\_gain & TEXT & NOT NULL &
+        Comma separated values indicating AF gain settings. \\
+        %
+        rf\_attenuator & TEXT & NOT NULL & 
+        Comma separated values indicating RF attenuator settings. \\
+        %
+        f\_sampling & REAL & NOT NULL & 
+        Sampling frequency. \\
+        % 
+        power\_code & INTEGER & - &
+        DDS output current power code, if available (dependent on firmware).\\
+        %
+        battery\_voltage & REAL & - &
+        Battery voltage, if available. \\
+        %
+        temperature\_1 & REAL & - &
+        Measured board temperature from sensor 1. \\
+        %
+        temperature\_2 & REAL & - & 
+        Measured board temperature from sensor 2. \\
+        % 
+        tx\_antenna & TEXT & NOT NULL &
+        Transmit antenna selection in comma separated value format. \\
+        % 
+        rx\_antenna & TEXT & NOT NULL &
+        Receive antenna selection in comma separated value format. \\
+        %
+
+    }{
+        Specification for \texttt{apres\_metadata} table.
+    }
+    
+    \newpage
+
+    \subsection{Table `\texttt{data}'}
+    \sqlspectable{
+        data\_id & INTEGER & PRIMARY KEY & 
+        Unique identifier for each data item stored in \texttt{/Proc}. \\
+        %
+        measurement\_id & INTEGER & NOT NULL &
+        Linked identified to \texttt{measurements} table for source of
+        data. \\
+        % 
+        filename & TEXT & NOT NULL &
+        Filename for processed data item stored in \texttt{/Proc}. \\
+        %
+        path & TEXT & NOT NULL & 
+        Path to file in UNIX form, relative to top-level project root. \\
+        %
+        time & TEXT & ASC NOT NULL &
+        \texttt{YYYY-MM-DD HH:MM:SS.SSS} formatted timestamp corresponding
+        to time at which data was processed. \\
+        %
+        processing\_steps & TEXT & - & 
+        Description of processing steps used to produced data file. \\
+        %
+    }
+    {Specification for \texttt{data} table.}
+    
+
+    \newpage
+
     \section{Testing}
-    \input{Files/Testing.tex}
+    % \input{Files/Testing.tex}
 
 \end{document}
