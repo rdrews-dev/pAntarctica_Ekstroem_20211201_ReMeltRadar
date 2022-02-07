@@ -1,13 +1,15 @@
 from os import pathsep
 
-
 import datetime
+import os
 import pathlib
 import pyapres
 import sqlite3
 
 DB_ROOT = "./Doc/ApRES/Rover/HF"
-DB_NAME = "Testing2.db"
+DB_NAME = "Testing.db"
+
+SEARCH_PATH = "./Raw/ApRES/Rover/HF/Testing"
 
 class ApRESDatabase:
 
@@ -120,12 +122,18 @@ class ApRESDatabase:
                 measurement_id INTEGER NOT NULL,
                 timestamp TEXT NOT NULL
                     CONSTRAINT valid_timestamp CHECK(timestamp IS strftime('%Y-%m-%d %H:%M:%f', timestamp)),
-                n_attenuators INTEGER NOT NULL CHECK (n_attenuators > 0 AND n_attenuators < 5),
-                n_chirps INTEGER NOT NULL CHECK (n_chirps > 0),
-                n_subbursts INTEGER NOT NULL CHECK (n_subbursts > 0), 
-                period REAL NOT NULL CHECK (period > 0),
-                f_lower REAL NOT NULL CHECK (f_lower > 0),
-                f_upper REAL NOT NULL CHECK (f_upper > 0),
+                n_attenuators INTEGER NOT NULL 
+                    CONSTRAINT valid_n_attenuators CHECK (n_attenuators > 0 AND n_attenuators < 5),
+                n_chirps INTEGER NOT NULL 
+                    CONSTRAINT valid_n_chirps CHECK (n_chirps > 0),
+                n_subbursts INTEGER NOT NULL 
+                    CONSTRAINT valid_n_subbursts CHECK (n_subbursts > 0), 
+                period REAL NOT NULL 
+                    CONSTRAINT valid_period CHECK (period > 0),
+                f_lower REAL NOT NULL 
+                    CONSTRAINT valid_f_lower CHECK (f_lower > 0),
+                f_upper REAL NOT NULL 
+                    CONSTRAINT valid_f_upper CHECK (f_upper > 0),
                 af_gain TEXT NOT NULL,
                 rf_attenuator TEXT NOT NULL,
                 f_sampling REAL NOT NULL,
@@ -213,38 +221,44 @@ class ApRESDatabaseManager:
 
         # Begin transaction and create entry within 'measurements'
         cursor = db.get_cursor()
-        cursor.execute("""
-            BEGIN TRANSACTION;
-            """)
-        cursor.execute("""
-            INSERT INTO `measurements`
-            (`filename`,
-             `path`,
-             `name`,
-             `timestamp`,
-             `valid`,
-             `location`,
-             `comments`,
-             `latitude`,
-             `longitude`,
-             `elevation`)
-            VALUES
-            (?,?,?,?,?,?,?,?,?,?);
-            """,
-            # Measurement ID
-            (
-                path.parts[-1],
-                str(pathlib.Path(path)),
-                name,
-                meas_dict['timestamp'],
-                meas_dict['valid'],
-                location,
-                comments,
-                meas_dict['latitude'],
-                meas_dict['longitude'],
-                meas_dict['elevation']
+
+        try:
+            cursor.execute("""
+                BEGIN TRANSACTION;
+                """)
+            cursor.execute("""
+                INSERT INTO `measurements`
+                (`filename`,
+                `path`,
+                `name`,
+                `timestamp`,
+                `valid`,
+                `location`,
+                `comments`,
+                `latitude`,
+                `longitude`,
+                `elevation`)
+                VALUES
+                (?,?,?,?,?,?,?,?,?,?);
+                """,
+                # Measurement ID
+                (
+                    path.parts[-1],
+                    str(pathlib.Path(path)),
+                    name,
+                    meas_dict['timestamp'],
+                    meas_dict['valid'],
+                    location,
+                    comments,
+                    meas_dict['latitude'],
+                    meas_dict['longitude'],
+                    meas_dict['elevation']
+                )
             )
-        )
+        except sqlite3.IntegrityError:
+            cursor.execute("ROLLBACK;")
+            print(f"Error reading {path}, skipping")
+            return
 
         # Now we need to get the measurement ID
         cursor.execute("""SELECT last_insert_rowid();""")
@@ -257,69 +271,81 @@ class ApRESDatabaseManager:
 
         # Now iterate over each burst
         burst_count = 1
+        valid = True # assume valid and then and on each burst
         for burst in bursts:
 
+            valid = valid and burst.valid
             burst_metadata = self.get_burst_metadata(burst_count, meas_id, burst)
 
-            cursor.execute(
-                """
-                INSERT INTO `apres_metadata`
-                (
-                `id`,
-                `burst_id`,
-                `measurement_id`,
-                `timestamp`,
-                `n_attenuators`,
-                `n_chirps`,
-                `n_subbursts`,
-                `period`,
-                `f_lower`,
-                `f_upper`,
-                `af_gain`,
-                `rf_attenuator`,
-                `f_sampling`,
-                `tx_antenna`,
-                `rx_antenna`,
-                `power_code`,
-                `battery_voltage`,
-                `temperature_1`,
-                `temperature_2`,
-                `rmb_issue`,
-                `vab_issue`,
-                `venom_issue`,
-                `software_issue`
-                ) 
-                VALUES
-                (
-                NULL, 
-                ?, 
-                ?, 
-                ?, 
-                ?, 
-                ?, 
-                ?, 
-                ?, 
-                ?, 
-                ?, 
-                ?, 
-                ?, 
-                ?, 
-                ?, 
-                ?, 
-                ?, 
-                ?, 
-                ?, 
-                ?, 
-                ?, 
-                ?, 
-                ?, 
-                ?
+            try:
+                cursor.execute(
+                    """
+                    INSERT INTO `apres_metadata`
+                    (
+                    `id`,
+                    `burst_id`,
+                    `measurement_id`,
+                    `timestamp`,
+                    `n_attenuators`,
+                    `n_chirps`,
+                    `n_subbursts`,
+                    `period`,
+                    `f_lower`,
+                    `f_upper`,
+                    `af_gain`,
+                    `rf_attenuator`,
+                    `f_sampling`,
+                    `tx_antenna`,
+                    `rx_antenna`,
+                    `power_code`,
+                    `battery_voltage`,
+                    `temperature_1`,
+                    `temperature_2`,
+                    `rmb_issue`,
+                    `vab_issue`,
+                    `venom_issue`,
+                    `software_issue`
+                    ) 
+                    VALUES
+                    (
+                    NULL, 
+                    ?, 
+                    ?, 
+                    ?, 
+                    ?, 
+                    ?, 
+                    ?, 
+                    ?, 
+                    ?, 
+                    ?, 
+                    ?, 
+                    ?, 
+                    ?, 
+                    ?, 
+                    ?, 
+                    ?, 
+                    ?, 
+                    ?, 
+                    ?, 
+                    ?, 
+                    ?, 
+                    ?, 
+                    ?
+                    )
+                    """,
+                    burst_metadata
                 )
-                """,
-                burst_metadata
-            )
+            except sqlite3.IntegrityError:
+                valid = False
 
             burst_count += 1
+
+        cursor.execute("""
+            UPDATE `measurements`
+            SET `valid` = ? 
+            WHERE `measurement_id` = ?;
+        """,
+            (valid, meas_id))
         
         cursor.execute("COMMIT;")
         db.get_connection().commit()
@@ -376,4 +402,9 @@ if __name__ == "__main__":
     # Create database
     db = ApRESDatabase(pathlib.Path(DB_ROOT) / DB_NAME, create=True)
     dbman = ApRESDatabaseManager()
-    dbman.add_dat_file(db, "E:\\Antarctica2022\\Raw\\ApRES\\HF\\Testing\\2021-12-28-hf-apres-test\\2021-12-28_213633.dat")
+
+    for file in os.listdir(SEARCH_PATH):
+        print(f"Found file {file}")
+        if file.lower().endswith(".dat"):
+            print(f"Adding file: {file}")
+            dbman.add_dat_file(db, pathlib.Path(SEARCH_PATH) / file)
