@@ -11,6 +11,7 @@
 % csvsimple package is required to load text from CSV files into tabular form
 \usepackage{csvsimple}
 \usepackage{xstring}
+\usepackage{longtable}
 \usepackage[table]{xcolor}
 \usepackage{hyperref}
 
@@ -84,19 +85,18 @@
 % -----------------------------------------------------------------------------
 % Define command for database defintion tables
 \newcommand{\sqlspectable}[2]{
-    \begin{table}[h!]
-        \centering
-        \renewcommand{\arraystretch}{1.5}
-        \rowcolors{2}{gray!10}{white}
-        \begin{tabular}{l l p{3cm} >{\raggedright\arraybackslash}p{4cm}}
-            \hline
-            \textbf{Fieldname} & \textbf{Datatype} & \textbf{Parameters} & \textbf{Description}\\
-            \hline
-            #1
-            \hline
-        \end{tabular}
-        \caption{#2}
-    \end{table}
+    \renewcommand{\arraystretch}{1.5}
+    \rowcolors{2}{gray!10}{white}
+    \begin{longtable}{l l >{\raggedright}p{3cm} >{\raggedright\arraybackslash}p{4cm}}
+        \caption{#2} \\
+        \hline
+        \textbf{Fieldname} & \textbf{Datatype} & \textbf{Parameters} & \textbf{Description}\\
+        \hline
+        \endhead
+        \hline
+        \endfoot
+        #1
+    \end{longtable}
 }
 
 % -----------------------------------------------------------------------------
@@ -132,9 +132,13 @@
         The name associated with the measurement, used to group sets of 
         measurements together. \\
         %
-        time & TEXT & UNIQUE ASC NOT NULL &
-        \texttt{YYYY-MM-DD HH:MM:SS.SSS} formatted timestamp according to
+        timestamp & TEXT & UNIQUE ASC NOT NULL &
+        \texttt{YYYY-mm-dd HH:MM:SS.fff} formatted timestamp according to
         time and date the measurement was taken. \\
+        %
+        valid & INTEGER & NOT NULL DEFAULT 0 &
+        Boolean indicator of whether file is valid. Assumes invalid by 
+        default. \\
         %
         location & TEXT & - & 
         Measurement location name. \\
@@ -152,7 +156,6 @@
         Elevation of measurement location if known (referenced to WGS84). \\
     }
     {Specification for \texttt{measurements} table.}
-    
     
     \newpage
 
@@ -175,22 +178,26 @@
         \multicolumn{4}{c}{\textit{ApRES Specific Metadata}} \\
         \hline
         %
-        n\_attenuators & INTEGER & CHECK(\textgreater 0, \textless 5) & 
+        timestamp & TEXT & NOT NULL & 
+        \texttt{YYYY-mm-dd HH:MM:SS.fff} formatted timestamp as logged in
+        \texttt{*.dat} file. \\
+        %
+        n\_attenuators & INTEGER & NOT NULL CHECK(\textgreater 0, \textless 5) & 
         Number of attenuator settings used. \\
         %
-        n\_chirps & INTEGER & CHECK(\textgreater 0) & 
+        n\_chirps & INTEGER & NOT NULL CHECK(\textgreater 0) & 
         Total number of individual chirps in file. \\
         %
-        n\_subbursts & INTEGER & CHECK(\textgreater 0) &
+        n\_subbursts & INTEGER & NOT NULL CHECK(\textgreater 0) &
         Number of sub-bursts (repeats) of the burst configuration. \\
         %
-        period & REAL & NOT NULL & 
+        period & REAL & NOT NULL CHECK(\textgreater 0) & 
         Chirp period in seconds. \\
         %
-        f\_lower & REAL & NOT NULL &
+        f\_lower & REAL & NOT NULL CHECK($\ge$ 0) &
         Lower bound of chirp ramp in Hertz. \\
         %
-        f\_upper & REAL & NOT NULL & 
+        f\_upper & REAL & NOT NULL CHECK($\ge$ 0) & 
         Upper bound of chirp ramp in Hertz. \\
         %
         af\_gain & TEXT & NOT NULL &
@@ -199,8 +206,14 @@
         rf\_attenuator & TEXT & NOT NULL & 
         Comma separated values indicating RF attenuator settings. \\
         %
-        f\_sampling & REAL & NOT NULL & 
+        f\_sampling & REAL & NOT NULL CHECK(\textgreater 0) & 
         Sampling frequency. \\
+        % 
+        tx\_antenna & TEXT & NOT NULL &
+        Transmit antenna selection in comma separated value format. \\
+        % 
+        rx\_antenna & TEXT & NOT NULL &
+        Receive antenna selection in comma separated value format. \\
         % 
         power\_code & INTEGER & - &
         DDS output current power code, if available (dependent on firmware).\\
@@ -213,14 +226,18 @@
         %
         temperature\_2 & REAL & - & 
         Measured board temperature from sensor 2. \\
-        % 
-        tx\_antenna & TEXT & NOT NULL &
-        Transmit antenna selection in comma separated value format. \\
-        % 
-        rx\_antenna & TEXT & NOT NULL &
-        Receive antenna selection in comma separated value format. \\
         %
-
+        rmb\_issue & TEXT & - & 
+        RMB issue number if available. \\
+        % 
+        vab\_issue & TEXT & - & 
+        VAB issue number if available. \\
+        %
+        venom\_issue & TEXT & - &
+        Venom issue number if available. \\
+        %
+        software\_issue & TEXT & - & 
+        VAB firmware issue number if available. \\
     }{
         Specification for \texttt{apres\_metadata} table.
     }
@@ -242,8 +259,8 @@
         path & TEXT & NOT NULL & 
         Path to file in UNIX form, relative to top-level project root. \\
         %
-        time & TEXT & ASC NOT NULL &
-        \texttt{YYYY-MM-DD HH:MM:SS.SSS} formatted timestamp corresponding
+        timestamp&  TEXT & ASC NOT NULL &
+        \texttt{YYYY-mm-dd HH:MM:SS.SSS} formatted timestamp corresponding
         to time at which data was processed. \\
         %
         processing\_steps & TEXT & - & 
