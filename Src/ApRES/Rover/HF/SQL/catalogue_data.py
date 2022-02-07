@@ -1,11 +1,13 @@
 from os import pathsep
-import sqlite3
-import pathlib
 
+
+import datetime
+import pathlib
 import pyapres
+import sqlite3
 
 DB_ROOT = "./Doc/ApRES/Rover/HF"
-DB_NAME = "Testing.db"
+DB_NAME = "Testing2.db"
 
 class ApRESDatabase:
 
@@ -98,12 +100,12 @@ class ApRESDatabase:
                 filename TEXT NOT NULL,
                 path TEXT UNIQUE NOT NULL,
                 name TEXT,
-                timestamp TEXT UNQIUE ASC NOT NULL
+                timestamp TEXT UNIQUE NOT NULL
                     CONSTRAINT valid_timestamp CHECK(timestamp IS strftime('%Y-%m-%d %H:%M:%f', timestamp)),
-                unique INTEGER NOT NULL DEFAULT 0,
+                valid INTEGER NOT NULL DEFAULT 0,
                 location TEXT,
                 comments TEXT,
-                lattiude REAL,
+                latitude REAL,
                 longitude REAL,
                 elevation REAL
             );
@@ -213,10 +215,12 @@ class ApRESDatabaseManager:
         cursor = db.get_cursor()
         cursor.execute("""
             BEGIN TRANSACTION;
+            """)
+        cursor.execute("""
             INSERT INTO `measurements`
-            (`measurement_id`,
-             `filename`,
+            (`filename`,
              `path`,
+             `name`,
              `timestamp`,
              `valid`,
              `location`,
@@ -225,13 +229,13 @@ class ApRESDatabaseManager:
              `longitude`,
              `elevation`)
             VALUES
-            (?,?,?,?,?,?,?,?,?,?)
+            (?,?,?,?,?,?,?,?,?,?);
             """,
             # Measurement ID
             (
-                None,
                 path.parts[-1],
-                str(pathlib.PosixPath(path)),
+                str(pathlib.Path(path)),
+                name,
                 meas_dict['timestamp'],
                 meas_dict['valid'],
                 location,
@@ -242,29 +246,128 @@ class ApRESDatabaseManager:
             )
         )
 
+        # Now we need to get the measurement ID
+        cursor.execute("""SELECT last_insert_rowid();""")
+        meas_id = cursor.fetchone()
+        if len(meas_id) > 0:
+            print(f"Found measurement_id {meas_id}")
+            meas_id = meas_id[0]
+        else:
+            raise Exception("Could not find inserted measurement row. Quitting.")
+
+        # Now iterate over each burst
+        burst_count = 1
+        for burst in bursts:
+
+            burst_metadata = self.get_burst_metadata(burst_count, meas_id, burst)
+
+            cursor.execute(
+                """
+                INSERT INTO `apres_metadata`
+                (
+                `id`,
+                `burst_id`,
+                `measurement_id`,
+                `timestamp`,
+                `n_attenuators`,
+                `n_chirps`,
+                `n_subbursts`,
+                `period`,
+                `f_lower`,
+                `f_upper`,
+                `af_gain`,
+                `rf_attenuator`,
+                `f_sampling`,
+                `tx_antenna`,
+                `rx_antenna`,
+                `power_code`,
+                `battery_voltage`,
+                `temperature_1`,
+                `temperature_2`,
+                `rmb_issue`,
+                `vab_issue`,
+                `venom_issue`,
+                `software_issue`
+                ) 
+                VALUES
+                (
+                NULL, 
+                ?, 
+                ?, 
+                ?, 
+                ?, 
+                ?, 
+                ?, 
+                ?, 
+                ?, 
+                ?, 
+                ?, 
+                ?, 
+                ?, 
+                ?, 
+                ?, 
+                ?, 
+                ?, 
+                ?, 
+                ?, 
+                ?, 
+                ?, 
+                ?, 
+                ?
+                )
+                """,
+                burst_metadata
+            )
+
+            burst_count += 1
+        
+        cursor.execute("COMMIT;")
+        db.get_connection().commit()
+
+    @staticmethod
+    def get_burst_metadata(burst_id, measurement_id, burst):
+        return (
+            burst_id,
+            measurement_id,
+            datetime.datetime.strftime(burst.Time_stamp, '%Y-%m-%d %H:%M:%S.%f')[0:-3],
+            burst.nAttenuators,
+            burst.NAntennas * burst.NSubBursts * burst.nAttenuators,
+            burst.NSubBursts,
+            burst.fmcw_parameters.T,
+            burst.fmcw_parameters.f_lower,
+            burst.fmcw_parameters.f_upper,
+            burst.AFGain,
+            burst.Attenuator1,
+            burst.fmcw_parameters.fs,
+            str(burst.TxAnt),
+            str(burst.RxAnt),
+            burst.PowerCode,
+            burst.BatteryVoltage,
+            burst.Temp1,
+            burst.Temp2,
+            burst.RMB_Issue,
+            burst.VAB_Issue,
+            burst.Venom_Issue,
+            burst.SW_Issue
+        )
+
     @staticmethod
     def measurements_dict_from_pyapres_burst(burst):
         # Create empty dictionary
         meas_dict = dict()
-        # Assign timestamp
-        time_in = datetime.datetime.strptime(
-            burst['Time Stamp'],
-            "%Y-%m-%d %H:%M:%S"
-        )
         # Convert to fractional seconds
         time_out = datetime.datetime.strftime(
-            time_in,
-            "%Y-m-%d %H:%M:%f"
+            burst.Time_stamp,
+            "%Y-%m-%d %H:%M:%S.%f"
         )
         # Assign to measurement dictionary
-        meas_dict['timestamp'] = time_out
+        meas_dict['timestamp'] = time_out[0:-3]
         meas_dict['valid'] = 1
-        meas_dict['latitude'] = burst['Latitude']
-        meas_dict['longitude'] = burst['Longitude']
+        meas_dict['latitude'] = burst.Latitude
+        meas_dict['longitude'] = burst.Longitude
         meas_dict['elevation'] = None
 
-
-
+        return meas_dict
 
 class UninitializedDatabaseError(Exception):
     pass
@@ -272,3 +375,5 @@ class UninitializedDatabaseError(Exception):
 if __name__ == "__main__":
     # Create database
     db = ApRESDatabase(pathlib.Path(DB_ROOT) / DB_NAME, create=True)
+    dbman = ApRESDatabaseManager()
+    dbman.add_dat_file(db, "E:\\Antarctica2022\\Raw\\ApRES\\HF\\Testing\\2021-12-28-hf-apres-test\\2021-12-28_213633.dat")
