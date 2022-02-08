@@ -151,10 +151,8 @@ if __name__ == "__main__":
     UsedRegion = [-10, -7, -71.8,-70.5]
     # Region zoomed into grounding line
     UsedZoom = [-8.8, -8.2, -71.8,-71.55]
-    # Core Directory
-    CoreDirectory='/Users/rdrews/esd/data/rdrews/data_large/Data_Antarctica/RemeltRadar_2021/'
     # Location of Output Image
-    OutputImage=f'{CoreDirectory}Proc/Figures/OverviewFigures/Overview.png'
+    OutputImage=f'../../Doc/Tex/Figures/Overview.png'
     #------------------------------------------------------
 
     
