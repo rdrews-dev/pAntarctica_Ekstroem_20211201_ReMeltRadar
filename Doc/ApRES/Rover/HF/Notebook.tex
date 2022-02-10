@@ -146,6 +146,15 @@
         Boolean indicator of whether file is valid. Assumes invalid by 
         default. \\
         %
+        base\_visible & INTEGER & NOT NULL DEFAULT 0 & 
+        Boolean indicator of whether basal reflector is visible in range data. \\
+        %
+        base\_range\_min & REAL & NOT NULL DEFAULT -1 & 
+        Minimum range (in steps of 50m) at which basal reflector can be found. \\
+        %
+        base\_range\_max & REAL & NOT NULL DEFAULT -1 & 
+        Maximum range (in steps of 50m) at which basal reflector can be found. \\
+        %
         location & TEXT & - & 
         Measurement location name. \\
         % 
@@ -288,6 +297,7 @@
     \section{Testing}
     \DTMsavedate{cdate}{2021-12-27}
     \subsection{\DTMusedate{cdate}}
+    
     \paragraph{20:43:06} \texttt{2021-12-27\_214306.dat} Measurement taken south west of storaage container at Neumayer III
     
     \DTMsavedate{cdate}{2021-12-28}

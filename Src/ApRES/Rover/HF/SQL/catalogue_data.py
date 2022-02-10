@@ -105,6 +105,10 @@ class ApRESDatabase:
                 timestamp TEXT UNIQUE NOT NULL
                     CONSTRAINT valid_timestamp CHECK(timestamp IS strftime('%Y-%m-%d %H:%M:%f', timestamp)),
                 valid INTEGER NOT NULL DEFAULT 0,
+                base_visible INTEGER NOT NULL DEFAULT 0,
+                base_range_min REAL NOT NULL DEFAULT -1,
+                base_range_max REAL NOT NULL DEFAULT -1
+                    CONSTRAINT base_min_max CHECK(base_range_min <= base_range_max),
                 location TEXT,
                 comments TEXT,
                 latitude REAL,
