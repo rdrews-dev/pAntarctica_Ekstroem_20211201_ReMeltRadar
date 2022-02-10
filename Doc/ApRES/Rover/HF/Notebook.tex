@@ -18,6 +18,9 @@
 % array package for column modifications (emphasis)
 \usepackage{array}
 
+% for convering datetimes
+\usepackage[british,showdow]{datetime2}
+
 \usepackage{tikz}
 
 \newcommand\hfaprestable[9]{
@@ -100,6 +103,9 @@
 }
 
 % -----------------------------------------------------------------------------
+% Define new date style for subsection titles
+
+% -----------------------------------------------------------------------------
 % Title
 \title{\textbf{Notebook Summary for HF ApRES Experiments}}
 \author{J.D.~Hawkins}
@@ -174,6 +180,13 @@
         %
         measurement\_id & INTEGER & NOT NULL & 
         Identifies the file record where the metadata originates from. \\
+        %
+        % header\_index & INTEGER & NOT NULL DEFAULT 0 &
+        % Indicates the byte at which to start reading the header \\
+        % % 
+        % burst\_index & INTEGER & NOT NULL & 
+        % Indicates the byte at which to start reading the data associated with the burst \\
+        %
         \hline
         \multicolumn{4}{c}{\textit{ApRES Specific Metadata}} \\
         \hline
@@ -273,6 +286,15 @@
     \newpage
 
     \section{Testing}
+    \DTMsavedate{cdate}{2021-12-27}
+    \subsection{\DTMusedate{cdate}}
+    \paragraph{20:43:06} \texttt{2021-12-27\_214306.dat} Measurement taken south west of storaage container at Neumayer III
+    
+    \DTMsavedate{cdate}{2021-12-28}
+    \subsection{\DTMusedate{cdate}}
+
+    \DTMsavedate{cdate}{2021-12-29}
+    \subsection{\DTMusedate{cdate}}
     % \input{Files/Testing.tex}
 
 \end{document}

@@ -362,8 +362,9 @@ class ApRESDatabaseManager:
             burst.fmcw_parameters.T,
             burst.fmcw_parameters.f_lower,
             burst.fmcw_parameters.f_upper,
-            burst.AFGain,
-            burst.Attenuator1,
+            # Bit hacky but quick concatentation
+            ','.join(burst.AFGain.split(',')[0:burst.nAttenuators]),
+            ','.join(burst.Attenuator1.split(',')[0:burst.nAttenuators]),
             burst.fmcw_parameters.fs,
             str(burst.TxAnt),
             str(burst.RxAnt),
