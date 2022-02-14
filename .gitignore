@@ -25,3 +25,5 @@
 /Untouched/*
 /Qgis/*
 /Log/* 
+
+.env*
