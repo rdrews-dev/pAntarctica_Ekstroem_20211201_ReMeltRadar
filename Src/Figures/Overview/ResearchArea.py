@@ -151,8 +151,8 @@ if __name__ == "__main__":
     UsedRegion = [-10, -7, -71.8,-70.5]
     # Region zoomed into grounding line
     UsedZoom = [-8.8, -8.2, -71.8,-71.55]
-    # Location of Output Image
-    OutputImage=f'../../Doc/Tex/Figures/Overview.png'
+    # Location of Output Image for Tex File
+    OutputImage=f'../../../Doc/Tex/Figures/Overview.png'
     #------------------------------------------------------
 
     
