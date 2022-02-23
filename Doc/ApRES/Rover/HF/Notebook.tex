@@ -47,42 +47,52 @@
     \hfaprestablecont
 }
 
-\newcommand{\afrftable}[1]{& #1}
-\newcommand{\hfaprestablemcol}[1]{%
-    % \multicolumn{4}{p{9cm}}{#1}%
-    {#1}
+\newcommand{\apresdoc}[9]{
+    \def\tempapfname{#1}
+    \def\tempaploc{#2}
+    \def\tempapcom{#3}
+    \def\temptimestamp{#4}
+    \def\tempafgain{#5}
+    \def\temprfattn{#6}
+    \def\tempperiod{#7}
+    \def\tempflow{#8}
+    \def\tempfupp{#9}
+    \apresdoccont
 }
-\newcommand{\hfaprestablecont}[3]{
-    \def\temphftlocation{#1}%
-    \def\temphftcomment{#2}%
-    \begin{table}[h]
-        \centering
-        \renewcommand{\arraystretch}{1.5}%
-        \begin{tabular}{>{\columncolor{gray!10}}l p{9cm}}%
-            \hline%
-            \textbf{Folder} & \hfaprestablemcol{\ttfamily\url{\temphftfolder}} \\ % filename
-            \textbf{Filename} & \hfaprestablemcol{\ttfamily\temphftfilename} \\ % filename
-            \hline%
-            Subbursts & \hfaprestablemcol{\temphftsubbursts} \\ %
-            Attenuator Settings & \hfaprestablemcol{\temphftnoattn} \\ %
-            AF Gain (dB) & 
-            % \begin{tabular}{l l l l}
-                \StrSubstitute{\temphftaf}{,}{, } \\%
-            % \end{tabular}
-            RF Attenuation (dB) & \StrSubstitute{\temphftrf}{,}{, } \\%
-            \hline %
-            Bandwidth ($B$) & \hfaprestablemcol{\temphftlowfreq~MHz to \temphftupfreq~MHz} \\ %
-            Chirp Period ($T$) & \hfaprestablemcol{\temphftchirp~s} \\ %
-            \hline %
-            Location & \hfaprestablemcol{\temphftlocation} \\ %
-            \hline %
-            Comments & \hfaprestablemcol{\temphftcomment} \\ %
-            \hline %
-        \end{tabular} %
-        \caption{File summary for \texttt{\temphftfilename}.}
-        \label{tab:#3}
-    \end{table}
-    \clearpage
+\newcommand{\apresdoccont}[5]{
+    \def\tempnatt{#1}
+    \def\tempnchirp{#2}
+    \def\tempnsubburst{#3}
+    \def\temppowercode{#4}
+    \def\tempbattvolt{#5}
+
+    \renewcommand{\arraystretch}{1.5}
+    \rowcolors{2}{gray!10}{white}
+    \begin{longtable}{>{\small\bfseries\raggedright}p{0.25\textwidth} >{\small\raggedright\arraybackslash}p{0.75\textwidth}}
+        \hline
+        \multicolumn{2}{c}{\bfseries Filename: \tempapfname} \\
+        \hline
+        \multicolumn{2}{c}{\includegraphics[width=\textwidth]{Testing/figures/\tempapfname.png}} \\
+        \hline
+        Time & \temptimestamp \\
+        Location & \tempaploc \\
+        Comments & \tempapcom \\
+        AF Gain & \tempafgain \\
+        RF Attenuation & \temprfattn \\
+        Period & \tempperiod~s \\
+        Bandwidth & \tempflow~Hz to \tempfupp~Hz \\
+        N. Attenuators & \tempnatt \\
+        N. Sub Bursts & \tempnsubburst \\
+        Power Code & \temppowercode \\
+        Battery Voltage & \tempbattvolt~V \\
+        \hline
+    \end{longtable}
+
+    % \subsubsection*{\tempapfname}
+    % \includegraphics[width=\textwidth]{Testing/figures/\tempapfname.png}
+    % \paragraph{Location:} \tempaploc
+    % \paragraph{Comments:} \tempapcom
+    \newpage
 }
 
 % -----------------------------------------------------------------------------
@@ -290,22 +300,11 @@
         %
     }
     {Specification for \texttt{data} table.}
-    
 
     \newpage
 
     \section{Testing}
-    \DTMsavedate{cdate}{2021-12-27}
-    \subsection{\DTMusedate{cdate}}
-    
-    \paragraph{20:43:06} \texttt{2021-12-27\_214306.dat} Measurement taken south west of storaage container at Neumayer III
-    
-    \DTMsavedate{cdate}{2021-12-28}
-    \subsection{\DTMusedate{cdate}}
- 
-    \DTMsavedate{cdate}{2021-12-29}
-    \subsection{\DTMusedate{cdate}}
 
-    % \input{Files/Testing.tex}
+    \input{Testing/file_doc.tex}
 
 \end{document}

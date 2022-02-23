@@ -8,7 +8,7 @@ PROJ_ROOT="../../../../"
 PYTHON_ROOT="Src/ApRES/Rover/HF/"
 
 PYTHON_FILES=(
-    "generate_doc_graphs.py"
+    # "create_testing_report.py"
 )
 
 # Execute python files
