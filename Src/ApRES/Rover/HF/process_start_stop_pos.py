@@ -9,8 +9,8 @@
 #   Requires: rover_apres_log, geopandas, pandas
 # 
 import os
-import sys
 import pathlib 
+import sys
 
 # Add parent directory to current file path to use rover_log
 __file__path__ = pathlib.Path(os.path.realpath(__file__))
@@ -47,4 +47,4 @@ for file in files:
 # Create data frame
 frame = rover_log.apres_burst_events_to_dataframe(events)
 # and write to file
-frame.to_csv("Proc/ApRES/Rover/HF/stop_start_rtk.csv", index=False)
+frame.to_csv("Proc/ApRES/Rover/HF/start_stop_rtk.csv", index=False)

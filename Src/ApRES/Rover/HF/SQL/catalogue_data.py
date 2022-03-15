@@ -7,9 +7,9 @@ import pyapres
 import sqlite3
 
 DB_ROOT = "./Doc/ApRES/Rover/HF"
-DB_NAME = "Testing.db"
+DB_NAME = "StartStop.db"
 
-SEARCH_PATH = "./Raw/ApRES/Rover/HF/Testing"
+SEARCH_PATH = "./Raw/ApRES/Rover/HF/StartStop"
 
 class ApRESDatabase:
 
@@ -111,6 +111,7 @@ class ApRESDatabase:
                     CONSTRAINT base_min_max CHECK(base_range_min <= base_range_max),
                 location TEXT,
                 comments TEXT,
+                tags TEXT,
                 latitude REAL,
                 longitude REAL,
                 elevation REAL
