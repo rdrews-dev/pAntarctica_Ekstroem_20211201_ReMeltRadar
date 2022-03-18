@@ -9,21 +9,50 @@ PROJECT_ROOT = "../../../../..";
 DATA_ROOT = fullfile(PROJECT_ROOT, "Raw/ApRES/Rover/HF/StartStop");
 PROC_ROOT = fullfile(PROJECT_ROOT, "Proc/ApRES/Rover/HF");
 
-catalogue_path = fullfile(PROC_ROOT, "stop_start_rtk.csv");
+apres_db = sqlite(fullfile(PROJECT_ROOT, 'Doc/ApRES/Rover/HF/StartStop.db'));
 
-catalogue = readtable(catalogue_path);
+query = ['SELECT ' ...
+    'measurements.measurement_id, ' ...
+    'measurements.path, ' ...
+    'measurements.filename, ' ...
+    'measurements.timestamp, ' ...
+    'IFNULL(measurements.tags, ""), ' ...
+    'measurements.latitude, ' ...
+    'measurements.longitude, ' ...
+    'measurements.elevation ' ...
+    'FROM measurements ' ...
+    'WHERE measurements.tags LIKE ''%gps_type%'' ' ...
+    'ORDER BY measurements.timestamp;'];
+
+TBL_MEAS_ID = 1;
+TBL_PATH = 2;
+TBL_FNAME = 3;
+TBL_TS = 4;
+TBL_TAGS = 5;
+TBL_LAT = 6;
+TBL_LON = 7;
+TBL_EL = 8;
+
+data = fetch(apres_db, query);
+
+% catalogue_path = fullfile(PROC_ROOT, "stop_start_rtk.csv");
+
+% catalogue = readtable(catalogue_path);
 
 %% Determine Mean Position for Survey
-mean_pos = [
-    mean(catalogue.latitude),
-    mean(catalogue.longitude),
-    mean(catalogue.elevation)
-];
+% mean_pos = [
+%     mean(catalogue.latitude),
+%     mean(catalogue.longitude),
+%     mean(catalogue.elevation)
+% ];
+pos = cell2mat(data(:, [TBL_LAT TBL_LON TBL_EL]));
+
+mean_pos = mean(pos);
 
 %% Now calculate ENU positions
 xyz = lla2enu(...
-    [catalogue.latitude, catalogue.longitude, catalogue.elevation],...
-    mean_pos.', ...
+    [pos(:,1), pos(:,2), pos(:,3)],...
+    mean_pos, ...
     'ellipsoid');
 
 % Get least squares positions to determine image plane
@@ -47,16 +76,28 @@ fmcw = ApRESProcessor.FMCWProcessor(3e7, 2e7, 2);
 time_start = datetime;
 
 save_path = fullfile(PROC_ROOT, strcat("StopStart/interp_", datestr(datetime, "yyyymmdd_HHMMss"), ".mat"));
-text = fileread(mfilename);
+text = fileread([mfilename '.m']);
 save_data = struct();
 save_data.coordinate_origin = mean_pos;
 save_data.source = text;
-save_data.time_start;
-save_data.tiem_interpolated = zeros(1, height(catalogue));
+save_data.time_start = datetime;
+save_data.time_interpolated = zeros(1, size(data,1));
 
-for k = 1:height(catalogue)
+log = ApRESProcessor.Log.instance();
+log.echo = true;
+
+for k = 1:size(data,1)
+
+    if contains(data{k, TBL_TAGS}, 'bad_chirps')
+        ApRESProcessor.Log.write(sprintf(...
+            "Skipping %s [bad_chirps]", data{k, TBL_FNAME}));
+        continue
+    end
     
-    profile = fmcw.load(char(fullfile(DATA_ROOT, catalogue.filename(k))));
+    ApRESProcessor.Log.write(sprintf(...
+        "Processing %s", data{k, TBL_FNAME}));
+
+    profile = fmcw.load(char(fullfile(DATA_ROOT, data{k, TBL_FNAME})));
     % assign positions
     profile.position = xyz(k,:);
     profile.rxPosition = xyz(k,:);
@@ -69,7 +110,7 @@ for k = 1:height(catalogue)
 
     img.draw(gca, @(x) 20*log10(abs(x)));
     drawnow
-    fprintf("Done %d/%d\n", k, height(catalogue))
+    fprintf("Done %d/%d\n", k, size(data,1))
 
     save_data.image = img;
     save(save_path, '-struct', 'save_data')
