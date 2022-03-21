@@ -72,7 +72,6 @@ velModel = ApRESProcessor.Imaging.ConstantVelocityModel(3.15, ...
 int = ApRESProcessor.Imaging.InterpolatorBeamPattern(velModel, @(x) cos(x).^4 .* cos(x/3));
 int.windowSize = 3;
 
-fmcw = ApRESProcessor.FMCWProcessor(3e7, 2e7, 2);
 
 time_start = datetime;
 
@@ -110,27 +109,25 @@ while processed < nProfiles
     evalFutures(1:numel(futureIdx)) = parallel.FevalFuture;
     for k = 1:numel(futureIdx)
 
-%             if contains(data{profIdx(m,k), TBL_TAGS}, 'bad_chirps')
-%                 ApRESProcessor.Log.write(sprintf(...
-%                     "Skipping %s [bad_chirps]", data{profIdx(m,k), TBL_FNAME}));
-%                 continue
-%             end
+%         if contains(data{profIdx(m,k), TBL_TAGS}, 'bad_chirps')
+%             ApRESProcessor.Log.write(sprintf(...
+%                 "Skipping %s [bad_chirps]", data{profIdx(m,k), TBL_FNAME}));
+%             continue
+%         end
 
         ApRESProcessor.Log.write(sprintf(...
             "Processing %s", data{valid_profiles(futureIdx(k)), TBL_FNAME}));
 
-        profile = fmcw.load(char(fullfile(DATA_ROOT, data{valid_profiles(k), TBL_FNAME})));
+        filename = char(fullfile(DATA_ROOT, data{valid_profiles(k), TBL_FNAME}));
         % assign positions
-        profile.position = xyz(valid_profiles(futureIdx(k)),:);
-        profile.rxPosition = xyz(valid_profiles(futureIdx(k)),:);
-        profile.txPosition = xyz(valid_profiles(futureIdx(k)),:);
+        position = xyz(valid_profiles(futureIdx(k)),:);
                 
         evalFutures(k) = parfeval(...
-            @interpolateProfile, 1, profile, velModel, imgSize, imgU, imgV, imgRes, imgRes, imgOrigin);
+            @interpolateProfile, 1, filename, position, velModel, imgSize, imgU, imgV, imgRes, imgRes, imgOrigin);
 
     end
 
-    wait(evalFutures);
+%     wait(evalFutures);
     
     for k = 1:numel(futureIdx)
 
@@ -161,7 +158,7 @@ while processed < nProfiles
     view(48, 1)
     axis equal
     drawnow
-    fprintf("Done %d/%d in %f s / %f s\n", processed, size(data,1),...
+    fprintf("Done %d/%d in %f s / %f s\n", processed, nProfiles,...
         save_data.time_interpolated(k), sum(save_data.time_interpolated));
 
     save_data.image = img;
@@ -178,7 +175,14 @@ save_data.image = img;
 
 save(save_path, '-struct', 'save_data')
 
-function [data] = interpolateProfile(profile, velModel, imgSize, imgU, imgV, imgResU, imgResV, imgOrigin)
+function [data] = interpolateProfile(filename, position, velModel, imgSize, imgU, imgV, imgResU, imgResV, imgOrigin)
+
+    fmcw = ApRESProcessor.FMCWProcessor(3e7, 2e7, 2);
+    profile = fmcw.load(filename);
+    % assign positions
+    profile.position = position;
+    profile.rxPosition = position;
+    profile.txPosition = position;
 
     plane = ApRESProcessor.Imaging.ImagePlane(imgSize, imgU, imgV, imgResU, imgResV, imgOrigin);
 %     int = ApRESProcessor.Imaging.InterpolatorBeamPattern(velModel);
