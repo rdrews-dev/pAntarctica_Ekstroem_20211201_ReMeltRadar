@@ -26,8 +26,6 @@
 /Qgis/*
 /Log/* 
 
-# Environemnts
-
 # Environments
 .env*
 .venv*

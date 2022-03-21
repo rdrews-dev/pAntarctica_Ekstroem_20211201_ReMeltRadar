@@ -1,0 +1,40 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "data management: test report (inc. subfolders)",
+            "type": "python",
+            "request": "launch",
+            "program": "bin/data.py",
+            "args" : ["-r", "-s", "test"],
+            "console": "integratedTerminal",
+        },
+        {
+            "name": "data management: test report (no subfolders)",
+            "type": "python",
+            "request": "launch",
+            "program": "bin/data.py",
+            "args" : ["-r", "test"],
+            "console": "integratedTerminal",
+        },
+        {
+            "name": "data management: test update (no subfolders)",
+            "type": "python",
+            "request": "launch",
+            "program": "bin/data.py",
+            "args" : ["-u", "test"],
+            "console": "integratedTerminal",
+        },
+        {
+            "name": "data management: test update (inc. subfolders)",
+            "type": "python",
+            "request": "launch",
+            "program": "bin/data.py",
+            "args" : ["-u", "-s", "test"],
+            "console": "integratedTerminal",
+        }
+    ]
+}
