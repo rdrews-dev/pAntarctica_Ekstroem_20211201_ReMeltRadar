@@ -118,7 +118,7 @@ while processed < nProfiles
         ApRESProcessor.Log.write(sprintf(...
             "Processing %s", data{valid_profiles(futureIdx(k)), TBL_FNAME}));
 
-        filename = char(fullfile(DATA_ROOT, data{valid_profiles(k), TBL_FNAME}));
+        filename = char(fullfile(DATA_ROOT, data{valid_profiles(futureIdx(k)), TBL_FNAME}));
         % assign positions
         position = xyz(valid_profiles(futureIdx(k)),:);
                 
