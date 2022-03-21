@@ -181,12 +181,13 @@ function [data] = interpolateProfile(filename, position, velModel, imgSize, imgU
     profile = fmcw.load(filename);
     % assign positions
     profile.position = position;
-    profile.rxPosition = position;
-    profile.txPosition = position;
+    profile.rxPosition = position - imgU.' * 10;
+    profile.txPosition = position - imgU.' * 50;
 
     plane = ApRESProcessor.Imaging.ImagePlane(imgSize, imgU, imgV, imgResU, imgResV, imgOrigin);
 %     int = ApRESProcessor.Imaging.InterpolatorBeamPattern(velModel);
     int = ApRESProcessor.Imaging.InterpolatorBeamPattern(velModel, @(x) cos(x).^4 .* cos(x/3));
+    int.monostaticApproximation = false;
     int.interpolate(plane, profile);
     data = plane.data;
     clear plane
