@@ -67,7 +67,8 @@ imgSize = round([sqrt((max(xyz(:,1))-min(xyz(:,1))).^2 + (max(xyz(:,2))-min(xyz(
 imgPlaneObj = ApRESProcessor.Imaging.ImagePlane(imgSize, imgU, imgV, imgRes, imgRes, imgOrigin);
 img = ApRESProcessor.Imaging.ImagePlane(imgSize, imgU, imgV, imgRes, imgRes, imgOrigin);
 
-velModel = ApRESProcessor.Imaging.ConstantVelocityModel(3.2);
+velModel = ApRESProcessor.Imaging.ConstantVelocityModel(3.15, ...
+    50, 0.8, 10, 0.8);
 int = ApRESProcessor.Imaging.InterpolatorBeamPattern(velModel, @(x) cos(x).^4 .* cos(x/3));
 int.windowSize = 3;
 
@@ -86,34 +87,87 @@ save_data.time_interpolated = zeros(1, size(data,1));
 log = ApRESProcessor.Log.instance();
 log.echo = true;
 
-for k = 1:size(data,1)
+pool = gcp;
+nWorkers = pool.NumWorkers;
+valid_profiles = find(~contains(data(:, TBL_TAGS), 'bad_chirps'));
+nProfiles = numel(valid_profiles);
 
-    if contains(data{k, TBL_TAGS}, 'bad_chirps')
-        ApRESProcessor.Log.write(sprintf(...
-            "Skipping %s [bad_chirps]", data{k, TBL_FNAME}));
-        continue
-    end
-    
-    ApRESProcessor.Log.write(sprintf(...
-        "Processing %s", data{k, TBL_FNAME}));
+save_data.valid_profiles = valid_profiles;
+save_data.n_workers = nWorkers;
 
-    profile = fmcw.load(char(fullfile(DATA_ROOT, data{k, TBL_FNAME})));
-    % assign positions
-    profile.position = xyz(k,:);
-    profile.rxPosition = xyz(k,:);
-    profile.txPosition = xyz(k,:);
-    
+img_data = zeros(size(img.data));
+sumTime = 0;
+
+processed = 0;
+
+while processed < nProfiles
+
     tic
-    int.interpolate(imgPlaneObj, profile, 2);
-    save_data.time_interpolated(k) = toc;
-    img.data = img.data + imgPlaneObj.data;
+
+    futureIdx = processed + 1 : processed + nWorkers;
+    futureIdx(futureIdx > size(data, 1)) = [];
+
+    evalFutures(1:numel(futureIdx)) = parallel.FevalFuture;
+    for k = 1:numel(futureIdx)
+
+%             if contains(data{profIdx(m,k), TBL_TAGS}, 'bad_chirps')
+%                 ApRESProcessor.Log.write(sprintf(...
+%                     "Skipping %s [bad_chirps]", data{profIdx(m,k), TBL_FNAME}));
+%                 continue
+%             end
+
+        ApRESProcessor.Log.write(sprintf(...
+            "Processing %s", data{valid_profiles(futureIdx(k)), TBL_FNAME}));
+
+        profile = fmcw.load(char(fullfile(DATA_ROOT, data{valid_profiles(k), TBL_FNAME})));
+        % assign positions
+        profile.position = xyz(valid_profiles(futureIdx(k)),:);
+        profile.rxPosition = xyz(valid_profiles(futureIdx(k)),:);
+        profile.txPosition = xyz(valid_profiles(futureIdx(k)),:);
+                
+        evalFutures(k) = parfeval(...
+            @interpolateProfile, 1, profile, velModel, imgSize, imgU, imgV, imgRes, imgRes, imgOrigin);
+
+    end
+
+    wait(evalFutures);
+    
+    for k = 1:numel(futureIdx)
+
+        processed = processed + 1;
+        [~, v] = fetchNext(evalFutures);
+        img_data = img_data + v;
+        
+    end
+
+    lastTime = toc;
+    sumTime = sumTime + lastTime;
+    timeRemAvg = (nProfiles - processed) * sumTime / processed;
+    timeRemLast = (nProfiles - processed) * lastTime;
+    
+    timeStrMin = secondsToHoursMinsSeconds(min([timeRemAvg timeRemLast]));
+    timeStrMax = secondsToHoursMinsSeconds(max([timeRemAvg timeRemLast]));
+    
+    disp(strcat("Remaining approximately between ",timeStrMin," and ", timeStrMax));
+
+    img.data = img_data;
+    
+%     tic
+%     int.interpolate(imgPlaneObj, profile, 2);
+    save_data.time_interpolated(valid_profiles(futureIdx)) = lastTime;
+%     img.data = img.data + imgPlaneObj.data;
 
     img.draw(gca, @(x) 20*log10(abs(x)));
+    view(48, 1)
+    axis equal
     drawnow
-    fprintf("Done %d/%d\n", k, size(data,1))
+    fprintf("Done %d/%d in %f s / %f s\n", processed, size(data,1),...
+        save_data.time_interpolated(k), sum(save_data.time_interpolated));
 
     save_data.image = img;
     save(save_path, '-struct', 'save_data')
+
+    clear evalFunc
 
 end
 
@@ -123,3 +177,27 @@ save_data.time_stop = time_stop;
 save_data.image = img;
 
 save(save_path, '-struct', 'save_data')
+
+function [data] = interpolateProfile(profile, velModel, imgSize, imgU, imgV, imgResU, imgResV, imgOrigin)
+
+    plane = ApRESProcessor.Imaging.ImagePlane(imgSize, imgU, imgV, imgResU, imgResV, imgOrigin);
+%     int = ApRESProcessor.Imaging.InterpolatorBeamPattern(velModel);
+    int = ApRESProcessor.Imaging.InterpolatorBeamPattern(velModel, @(x) cos(x).^4 .* cos(x/3));
+    int.interpolate(plane, profile);
+    data = plane.data;
+    clear plane
+    
+end
+
+function [str] = secondsToHoursMinsSeconds(time)
+
+    s = mod(time , 60);
+    time = time - s;
+    m = mod(time / 60, 60);
+    time = time - m * 60;
+    h = floor(time / 60 / 60);
+    
+    str = sprintf("%ih %im %2.0fs", h, m, s);
+    
+end
+ 
