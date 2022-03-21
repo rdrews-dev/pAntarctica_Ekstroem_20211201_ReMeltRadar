@@ -105,7 +105,7 @@ while processed < nProfiles
     tic
 
     futureIdx = processed + 1 : processed + nWorkers;
-    futureIdx(futureIdx > size(data, 1)) = [];
+    futureIdx(futureIdx > nProfiles) = [];
 
     evalFutures(1:numel(futureIdx)) = parallel.FevalFuture;
     for k = 1:numel(futureIdx)
