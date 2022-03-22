@@ -1,12 +1,12 @@
 {
     "latex-workshop.latex.recipes" : [
-        {
-            "name" : "bash > latexmk (se)",
-            "tools" : [
-                "bash",
-				"latexmk (se)"
-            ]
-        },
+        // {
+        //     "name" : "bash > latexmk (se)",
+        //     "tools" : [
+        //         "bash",
+		// 		"latexmk (se)"
+        //     ]
+        // },
         {
 			"name": "latexmk 🔃",
 			"tools": [
