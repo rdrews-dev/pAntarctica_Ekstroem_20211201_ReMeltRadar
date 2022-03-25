@@ -96,6 +96,7 @@
     ~\\
     \begin{tabular}{>{\bfseries}l l >{\bfseries}l l}
       \hline
+      \rowcolor{gray!50}
       \multicolumn{4}{c}{\textbf{Filename} \tempapfname} \\
       \hline
       Param. & \bfseries Value & Param. & \bfseries Value \\
@@ -517,6 +518,61 @@ transmit and receive antennas of \SI{40}{\metre}.
 {12.238}
 {FigureHFApRESBroadsideGroundingLine}
 
+\subsection{Synthetic Aperture Radar Measurements}
+The test site chosen for the HF ApRES SAR measurements was selected to coincide
+with the series of basal terraces observed in the PulseEKKO data located in the
+finely gridded region of Figure \ref{fig:overview}.  The HF ApRES system was
+towed into position on 7\textsuperscript{th} January, configured according to
+\ref{FigureHFApRESSubZeroConfiguration} and initial testing was conducted,
+including the resolution of a software navigation issue with the rover.  Two
+modes of measurement were conducted with the HF ApRES: a start-stop profile
+where the instrument was repositioned in steps of \SI{1}{\metre} increments
+along the desired profile direct, and kinematic profiles where the radar was set
+to continuously measure while towed along the profile by the SubZero rover at
+speeds of approximately \SI{0.7}{\metre\per\second} to
+\SI{1}{\metre\per\second}.  For all measurement modes, the radar was configured
+with the parameters listed in Table \ref{TableHFApRESMeasurementParams}.
+
+\begin{table}[h]
+  \rowcolors{2}{gray!25}{white}
+  \centering\begin{tabular}{l c r l}
+    \hline
+    \rowcolor{gray!50}
+    Parameter & Symbol & \multicolumn{2}{c}{Value} \\
+    \hline
+    Centre Frequency & $f_c$ & 30 & \si{\mega\hertz} \\
+    Bandwidth & $B$ & 20 & \si{\mega\hertz} \\
+    Pulse Duration & $T$ & 1 & \si{\second} \\
+    Transmit Power & $P_T$ & 0.1 & \si{\watt} \\
+    AF Gain & $G_{AF}$ & 6 & \si{\deci\bel} \\
+    RF Attenuation & $A_{RF}$ & 10 & \si{\deci\bel} \\
+    RF Atten. (External) & $A_{RFExt}$ & 10 &  \si{\deci\bel} \\
+    Antenna Separation & $S_{Ant}$ & 40 & \si{\metre} \\
+    Rover Separation & $S_{Rov}$ & 10 & \si{\metre} \\
+    \hline
+    
+  \end{tabular}
+  \caption{Radar configuration parameters common to both the start-stop and
+  kinematic the HF ApRES SAR measurements}
+  \label{TableHFApRESMeasurementParams}
+\end{table}
+
+\subsubsection{Start-Stop Measurement}
+
+On the 7\textsuperscript{th} January, \SI{192}{\metre} of the intended profile covered .  The rover was left in position overnight and the
+profile was resumed to cover the remaining \SI{710}{\metre} over approximately 5
+hours, including one hour of downtime.  For
+
+  
+\begin{figure}[h]
+  \centering 
+  \includegraphics{../../Doc/ApRES/Rover/HF/StartStop/StartStopRawPositions.png}
+  \caption{Recorded GPS positions for rover during start-stop acquisitions on
+  7\textsuperscript{th} and 8\textsuperscript{th} of January, 2022.  A
+  \texttt{gps\_type} value of 4 indicates RTK positioning, while values of 2 and
+  1 indicate reduced accuracy GPS fixes.}
+  \label{<label>}
+\end{figure}
 
 \pagebreak
 \section{cApRES: Data example, field picture, system setup and site specifics}
