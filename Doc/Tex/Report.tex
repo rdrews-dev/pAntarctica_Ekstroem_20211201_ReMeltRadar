@@ -582,7 +582,16 @@ the Tidal Fitting Toolbox \footnote{\url{https://uk.mathworks.com/matlabcentral/
 but have not yet been validated with external data.  It is assumed that the
 tidal components are also locally invariant and therefore the relative position
 of the rover to the base is initially found through subtraction of the base
-station coordinates from the rover coordinates.
+station coordinates from the rover coordinates. Phase and power of raw data is 
+shown in Figure \ref{FigureHFApRESRaw}.
+
+\begin{figure}[h!]
+  \centering 
+  \includegraphics{../../Doc/ApRES/Rover/HF/StartStop/StartStopRawData.png}
+  \caption{Phase and power of raw, unprocessed ApRES data collected along the
+  profile.}
+  \label{FigureHFApRESRaw}
+\end{figure}
 
 Initial SAR processing of the dataset was performed using an interpolated 
 $\textrm{sinc}$ routine using the MATLAB\copyright~ ApRESProcessor library\footnote{
@@ -595,9 +604,18 @@ intial pass, bursts with low signal to noise ratios compared to the mean of the
 dataset were excluded however further passes will select individual chirps from
 these bursts to maximise the number of radar locations at which the
 backprojection is performed.  Results of the backprojection in power and phase
-are shown in Figure \ref{FigureHFBackprojection}.
+are shown in Figure \ref{FigureHFApRESBackprojection}.
 
-  
+\begin{figure}[h]
+  \centering 
+  \includegraphics{../../Doc/ApRES/Rover/HF/StartStop/StartStopInitialInterp.png}
+  \caption{Phase and power of initial backprojected (SAR processed) image from
+  the HF ApRES towed by the SubZero rover.  The coordinate system for the image
+  is relative polar stereographic to the Trimble GPS base station.  Pixel
+  resolution is \SI{4}{\metre}.}
+  \label{FigureHFApRESBackprojection}
+\end{figure}
+
 \begin{figure}[h!]
   \centering 
   \includegraphics{../../Doc/ApRES/Rover/HF/StartStop/StartStopRTKPositions.png}
@@ -609,17 +627,6 @@ are shown in Figure \ref{FigureHFBackprojection}.
   flow.}
   \label{FigureHFApRESGNSS}
 \end{figure}
-
-\begin{figure}[h!]
-  \centering 
-  \includegraphics{../../Doc/ApRES/Rover/HF/StartStop/StartStopInitialInterp.png}
-  \caption{Phase and power of initial backprojected (SAR processed) image from
-  the HF ApRES towed by the SubZero rover.  The coordinate system for the image
-  is relative polar stereographic to the Trimble GPS base station.  Pixel
-  resolution is \SI{4}{\metre}.}
-  \label{FigureHFBackprojection}
-\end{figure}
-
 \clearpage
 
 \pagebreak
