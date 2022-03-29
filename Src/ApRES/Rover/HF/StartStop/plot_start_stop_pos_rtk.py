@@ -67,6 +67,7 @@ ax[0][0].plot(
     df[day_7].timestamp, df[day_7].rover_psx, '.', color=ucl_red,
     markersize=MARKER_SIZE
 )
+ax[0][0].grid()
 ax[0][0].set_ylabel('PSX (m)')
 highlight_active_areas(ax[0][0], ACTIVE_AREAS)
 
@@ -78,6 +79,7 @@ ax[0][1].plot(
     df[day_8].timestamp, df[day_8].rover_psx, '.', color=ucl_red,
     markersize=MARKER_SIZE
 )
+ax[0][1].grid()
 highlight_active_areas(ax[0][1], ACTIVE_AREAS)
 
 # Plot Polarstereogrpahic X
@@ -89,6 +91,7 @@ ax[1][0].plot(
     df[day_7].timestamp, df[day_7].rover_psy, '.', color=ucl_red,
     markersize=MARKER_SIZE
 )
+ax[1][0].grid()
 ax[1][0].set_ylabel('PSY (m)')
 highlight_active_areas(ax[1][0], ACTIVE_AREAS)
 
@@ -100,6 +103,7 @@ ax[1][1].plot(
     df[day_8].timestamp, df[day_8].rover_psy, '.', color=ucl_red,
     markersize=MARKER_SIZE
 )
+ax[1][1].grid()
 highlight_active_areas(ax[1][1], ACTIVE_AREAS)
 
 # Plot Polarstereogrpahic X
@@ -111,6 +115,7 @@ ax[2][0].plot(
     df[day_7].timestamp, df[day_7].rover_el, '.', color=ucl_red,
     markersize=MARKER_SIZE
 )
+ax[2][0].grid()
 ax[2][0].set_ylabel('El. (m)')
 highlight_active_areas(ax[2][0], ACTIVE_AREAS)
 
@@ -122,6 +127,7 @@ ax[2][1].plot(
     df[day_8].timestamp, df[day_8].rover_el, '.', color=ucl_red,
     markersize=MARKER_SIZE, label="Rover"
 )
+ax[2][1].grid()
 ax[2][1].legend(markerscale=4)
 highlight_active_areas(ax[2][1], ACTIVE_AREAS)
 
@@ -165,12 +171,14 @@ ax[0][0].plot(
     markersize=MARKER_SIZE
 )
 ax[0][0].set_ylabel('Rover X (m)')
+ax[0][0].grid()
 highlight_active_areas(ax[0][0], ACTIVE_AREAS)
 
 ax[0][1].plot(
     df[day_8].timestamp, df[day_8].rover_x, '.', color=ucl_orange,
     markersize=MARKER_SIZE
 )
+ax[0][1].grid()
 highlight_active_areas(ax[0][1], ACTIVE_AREAS)
 
 # Plot Polarstereogrpahic X
@@ -178,6 +186,7 @@ ax[1][0].plot(
     df[day_7].timestamp, df[day_7].rover_y, '.', color=ucl_orange,
     markersize=MARKER_SIZE
 )
+ax[1][0].grid()
 ax[1][0].set_ylabel('Rover Y (m)')
 highlight_active_areas(ax[1][0], ACTIVE_AREAS)
 
@@ -185,6 +194,7 @@ ax[1][1].plot(
     df[day_8].timestamp, df[day_8].rover_y, '.', color=ucl_orange,
     markersize=MARKER_SIZE
 )
+ax[1][1].grid()
 highlight_active_areas(ax[1][1], ACTIVE_AREAS)
 
 # Plot Polarstereogrpahic X
@@ -192,6 +202,7 @@ ax[2][0].plot(
     df[day_7].timestamp, df[day_7].rover_z, '.', color=ucl_orange,
     markersize=MARKER_SIZE
 )
+ax[2][0].grid()
 ax[2][0].set_ylabel('Rover Z (m)')
 highlight_active_areas(ax[2][0], ACTIVE_AREAS)
 
@@ -199,6 +210,7 @@ ax[2][1].plot(
     df[day_8].timestamp, df[day_8].rover_z, '.', color=ucl_orange,
     markersize=MARKER_SIZE
 )
+ax[2][1].grid()
 highlight_active_areas(ax[2][1], ACTIVE_AREAS)
 
 ax[2][1].xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))

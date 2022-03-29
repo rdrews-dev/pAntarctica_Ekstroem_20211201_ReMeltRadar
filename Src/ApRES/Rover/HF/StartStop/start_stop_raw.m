@@ -14,17 +14,22 @@ catalogue_path = fullfile(PROC_ROOT, "stop_start_rtk.csv");
 catalogue = readtable(catalogue_path);
 
 %% Determine Mean Position for Survey
-mean_pos = [
-    mean(catalogue.latitude),
-    mean(catalogue.longitude),
-    mean(catalogue.elevation)
-];
+% mean_pos = [
+%     mean(catalogue.latitude),
+%     mean(catalogue.longitude),
+%     mean(catalogue.elevation)
+% ];
+% 
+% %% Now calculate ENU positions
+% xyz = lla2enu(...
+%     [catalogue.latitude, catalogue.longitude, catalogue.elevation],...
+%     mean_pos.', ...
+%     'ellipsoid');
 
-%% Now calculate ENU positions
-xyz = lla2enu(...
-    [catalogue.latitude, catalogue.longitude, catalogue.elevation],...
-    mean_pos.', ...
-    'ellipsoid');
+addpath(fullfile(PROJECT_ROOT, 'Src/RTKGPS/ApRES/Rover/HF'));
+
+[x,y,z] = interp_hf_rover_rtkdata(datetime(data(:, TBL_TS)));
+xyz = [x y z];
 
 fmcw = ApRESProcessor.FMCWProcessor(3e7, 2e7, 2);
 
