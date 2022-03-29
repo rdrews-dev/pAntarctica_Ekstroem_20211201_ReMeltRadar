@@ -45,15 +45,19 @@ data = fetch(apres_db, query);
 %     mean(catalogue.longitude),
 %     mean(catalogue.elevation)
 % ];
-pos = cell2mat(data(:, [TBL_LAT TBL_LON TBL_EL]));
-
-mean_pos = mean(pos);
+% pos = cell2mat(data(:, [TBL_LAT TBL_LON TBL_EL]));
+% 
+% mean_pos = mean(pos);
 
 %% Now calculate ENU positions
-xyz = lla2enu(...
-    [pos(:,1), pos(:,2), pos(:,3)],...
-    mean_pos, ...
-    'ellipsoid');
+% xyz = lla2enu(...
+%     [pos(:,1), pos(:,2), pos(:,3)],...
+%     mean_pos, ...
+%     'ellipsoid');
+addpath(fullfile(PROJECT_ROOT, 'Src/RTKGPS/ApRES/Rover/HF'));
+
+[x,y,z] = interp_hf_rover_rtkdata(datetime(data(:, TBL_TS)));
+xyz = [x y z];
 
 % Get least squares positions to determine image plane
 a = [xyz(:,1) ones(length(xyz),1)] \ xyz(:,2);
@@ -78,7 +82,7 @@ time_start = datetime;
 save_path = fullfile(PROC_ROOT, strcat("StopStart/interp_", datestr(datetime, "yyyymmdd_HHMMss"), ".mat"));
 text = fileread([mfilename '.m']);
 save_data = struct();
-save_data.coordinate_origin = mean_pos;
+save_data.coordinate_origin = [0,0,0];
 save_data.source = text;
 save_data.time_start = datetime;
 save_data.time_interpolated = zeros(1, size(data,1));
