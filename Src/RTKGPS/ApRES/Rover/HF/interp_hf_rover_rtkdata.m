@@ -1,5 +1,57 @@
-function [x, y, z, bs_psx, bs_psy, bs_el, rv_psx, rv_psy, rv_el, t] = ...
+function [x, y, z, bs_psx, bs_psy, bs_el, rv_psx, rv_psy, rv_el, bs_psx0, bs_psy0, bs_el0, t] = ...
     interp_hf_rover_rtkdata(t_rov)
+%%
+%
+%   Assume that the base station is fixed at position B_0 on the ice shelf,
+%   which is the modulated in the horizontal direction by the ice flow F
+%   and the tidal motion of the ice shelf (assumed to be fixed in the
+%   vertical direction) T_v.  Then there is also an error component
+%   introduced by the GPS such that the recorded position is given by
+%
+%       B(t) = B_0 + F*t + T_v(t) + B_e(t)
+%
+%   Then similarly, the rover position, relative to the ice shelf can be
+%   described as R_0(t) because it is mobile.  It is subject to the same
+%   flow and tidal modulation with time (assuming that these parameters are
+%   constant across the distance of the profile).
+%
+%       R(t) = R_0(t) + F*t + T_v(t) + R_e(t)
+%
+%   From the ITS_LIVE dataset we can approximate the estimated flow
+%   velocity across the spatial extent of the profile.  This can then be
+%   subtracted from B(t) to give
+%
+%       B(t) - Fe*t = B_0 + (F-Fe)*t + T_v(t) + B_e(t)
+%
+%   The Tidal Fitting Toolbox is then used to the estimate the vertical
+%   tidal motion from B(t) - Fe*t
+%
+%       B(t) - Fe*t - T_ve(t) = B_0 + (F-Fe)*t + (T_v(t)-T_ve(t)) + B_e(t)
+%
+%   Therefore provided that F-Fe and T_v(t) - T_ve(t) are sufficiently
+%   small, the derived solution gives
+%
+%       B(t) - Fe*t - T_ve(t) = B_0 + B_e(t)
+%
+%   Assuming that the error B_e(t) is distributed normally over a
+%   sufficient duration of time then B_0 can be estimated.
+%
+%   To find the rover position, relying on the assumtion that T_v(t) and F
+%   are locally invariant, then
+%
+%       R(t) - Fe*t - T_ve(t) = R_0(t) + (F-Fe)*t + (T_v(t)-T_ve(t)) +
+%                               R_e(t)
+%
+%   As before, assuming that F-Fe and T(t)-T_ve(t) are sufficiently small
+%   then
+%
+%       R(t) - Fe*t - T_ve(t) = R_0(t) + R_e(t)
+%
+%   And then the estimate of B_0 can be used to find the relative position
+%   of the rover to the base station thus:
+%
+%       R(t) - Fe*t - T_ve(t) - B_0 = R_0(t) + R_e(t) + B_0
+%
 
 PROJECT_ROOT = "../../../../..";
 DATA_ROOT = fullfile(PROJECT_ROOT, "Raw/RTKGPS/ApRES/Rover/HF");
@@ -53,6 +105,50 @@ rover_7_int = interpolate_rtk_struct(rover_day7, t_day7);
 base_8_int = interpolate_rtk_struct(base_day8, t_day8);
 rover_8_int = interpolate_rtk_struct(rover_day8, t_day8);
 
+%% Calculate Relative Offsets
+t = [t_day7 t_day8];
+
+bs_psy = [base_7_int.psy base_8_int.psy];
+bs_psx = [base_7_int.psx base_8_int.psx];
+bs_el = [base_7_int.el base_8_int.el];
+
+rv_psy = [rover_7_int.psy rover_8_int.psy];
+rv_psx = [rover_7_int.psx rover_8_int.psx];
+rv_el = [rover_7_int.el rover_8_int.el];
+
+%% Fit ITS_LIVE ice flow
+%
+%   This assumes that the interpolated value of vx and vy are constant over
+%   the length of the profile however this may not generally be the case.
+t_years = years(t - t(1));
+
+% vx = mean(itslive_interp('vx', bs_psx, bs_psy));
+% vy = mean(itslive_interp('vy', bs_psx, bs_psy));
+% 
+% dx_flow = cumtrapz(t_years, vx*ones(size(t)));
+% dy_flow = cumtrapz(t_years, vy*ones(size(t)));
+
+pfit_x = polyfit(t_years, bs_psx, 1);
+pfit_y = polyfit(t_years, bs_psy, 1);
+
+vx_est = pfit_x(1);
+vy_est = pfit_y(1);
+
+fprintf("Estimating (x,y) velocities...\n");
+fprintf("vx: %7.3f m/yr\n", vx_est);
+fprintf("vy: %7.3f m/yr\n", vy_est);
+fprintf(" v: %7.3f m/yr\n", vecnorm([vx_est vy_est]));
+
+dx_flow = cumtrapz(t_years, vx_est*ones(size(t)));
+dy_flow = cumtrapz(t_years, vy_est*ones(size(t)));
+
+bs_psx0 = mean(bs_psx - dx_flow); %polyval(pfit_x, t_years));
+bs_psy0 = mean(bs_psy - dy_flow); %polyval(pfit_y, t_years));
+
+fprintf("\nBase Station Estimated Position:\n")
+fprintf("bs_psx0: %f m\n", bs_psx0);
+fprintf("bs_psx0: %f m\n", bs_psy0);
+
 %% Fit tidal components 
 % Aslak Grinsted (2022). Tidal fitting toolbox 
 %   (https://www.mathworks.com/matlabcentral/fileexchange/19099-tidal-fitting-toolbox),
@@ -92,28 +188,18 @@ fprintf("\n")
 bs_tide = tidalval(bs_tidalfit, bs_dn_norm);
 bs_el_detide = bs_el - bs_tide;
 
-% Remove linear trend
+%% Remove linear trend
 bs_el_detide_linfit = polyval(polyfit(bs_dn_norm, bs_el_detide, 1), bs_dn_norm);
 bs_el_detide_linfit = bs_el_detide_linfit - bs_el_detide_linfit(1);
 
 bs_el_detrend = bs_el_detide - bs_el_detide_linfit;
-
-%% Calculate Relative Offsets
-t = [t_day7 t_day8];
-
-bs_psy = [base_7_int.psy base_8_int.psy];
-bs_psx = [base_7_int.psx base_8_int.psx];
-bs_el = [base_7_int.el base_8_int.el];
-
-rv_psy = [rover_7_int.psy rover_8_int.psy];
-rv_psx = [rover_7_int.psx rover_8_int.psx];
-rv_el = [rover_7_int.el rover_8_int.el];
+bs_el0 = mean(bs_el_detrend);
 
 %% Calculate Interpolated Positions
 if nargin ~= 1
     t_rov = t;
 end
 
-x = interp1(t, rv_psx - bs_psx, t_rov);
-y = interp1(t, rv_psy - bs_psy, t_rov);
-z = interp1(t, rv_el - bs_el, t_rov);
+x = interp1(t, rv_psx - bs_psx0 - dx_flow, t_rov);
+y = interp1(t, rv_psy - bs_psy0 - dy_flow, t_rov);
+z = interp1(t, rv_el - bs_el0 - bs_tide - bs_el_detide_linfit, t_rov);

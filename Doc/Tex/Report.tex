@@ -63,6 +63,7 @@
 \usetikzlibrary{positioning,calc}
 \usepackage{circuitikz}
 \usepackage{url}
+\usepackage{longtable}
 
 \definecolor{ucl_red}{HTML}{D50032}
 \definecolor{UCLdarkblue}{HTML}{003D4C}
@@ -189,8 +190,8 @@ Here we need a table such as table \label{TableGPR} for each sensor.
 \label{SecHFApRES}
 
 \subsection{System Overview}
-The HF ApRES is a frequency modulated continuous wave (FMCW) radar operating
-over a bandwidth of \SI{20}{\mega\hertz} to \SI{40}{\mega\hertz}.  It builds
+The HF ApRES is a frequency modulated continuous wave (FMCW) radar with 
+a bandwidth of \SI{20}{\mega\hertz} to \SI{40}{\mega\hertz}.  It builds
 upon the existing phase-coherent radar architecture of the ApRES\footnote{
   P. Brennan, L. Lok, K. Nicholls and H. Corr, "Phase‐sensitive FMCW radar 
   system for high‐precision Antarctic ice shelf profile monitoring", IET 
@@ -199,11 +200,11 @@ upon the existing phase-coherent radar architecture of the ApRES\footnote{
 } but uses a modified radio front-end to operate at the reduced bandwidth
 described.  In addition to the radar, the HF ApRES makes use of two 'wire-mesh
 dipole' antennas - one each for the transmitter and receiver, and a 12V 
-\SI{7}{\ampere\hour} lead-acid battery for power.  Testing was required 
-to validate the performance of both the HF ApRES radar unit and 
-'wire-mesh dipole' antennas, as they had not been previously deployed on a 
-polar ice shelf and subject only to verification through simulation and 
-laboratory testing.
+\SI{7}{\ampere\hour} lead-acid battery for power.  Both the HF ApRES radar unit 
+and  the 'wire-mesh dipole' antennas had not been previously deployed on a 
+polar ice shelf.  The objectives for the HF ApRES system were therefore to test
+and validate its performance, then conduct a synthetic aperture radar survey of
+the ice-ocean interface of the ice shelf.
 
 \subsubsection{System Equipment Listing}
 \begin{itemize}
@@ -284,7 +285,10 @@ sufficiently for clean deramped signals to be recorded.
     \hline
   \end{tabular}
   \label{TableHFApRES}
-  \caption{Overview of measurements taken with HF ApRES System} 
+  \caption{Overview of measurements taken with HF ApRES System.  Individual data
+  files are described within the \textit{Testing} and \textit{StartStop}
+  databases.  Schema for the databases can be found in the Appendix
+  \ref{AppendixHFApRESDatabaseSchemata} of this report.} 
 \end{table}
 
 \subsubsection*{Wire-Mesh Dipole Antennas}
@@ -292,7 +296,7 @@ The wire-mesh dipole antennas were each tested with an SDRKits Vector Network
 Analyzer (VNA) which allows for the measurement of the antenna reflection
 coefficient ($\Gamma$).  The reflection coefficient is calculated from the
 scattering parameters (s-parameters) measured by the VNA, where $S_{11}$ 
-refers to the phasor ratio between the scattered and incident voltages from
+refers to the complex phasor ratio between the scattered and incident voltages from
 the antenna.  The reflection coefficient can therefore be used to infer the 
 ratio of incident power to the antenna which is 'accepted' and sets an upper
 bound on the radiation efficiency.  The radiation efficiency of the antenna
@@ -307,15 +311,15 @@ bound.
 \end{equation}
 
 The measured reflection coefficient of the wire-mesh dipole antennas from tests
-on 28.12.21 is shown in Figure \ref{FigureWireMeshNeumayer}.  Within the field
-of antenna engineering, a reflection coefficient of less than
-\SI{-10}{\deci\bel} across the desired signal bandwidth, i.e. greater than 90\%
-of power accepted by the antenna, is deemed to be acceptable.  It can be seen
-that during initial tests conducted \SI{500}{\metre} south-west of Neumayer
-Station the antennas have a measured $\left|S_{11}\right|_{\textrm{dB}}$ of less
-than \SI{-10}{\deci\bel} across the desired signal bandwidth of
-\SI{20}{\mega\hertz} to \SI{40}{\mega\hertz}.  Discussion regarding the antenna
-orientation can be found in Section ???.
+on 28\textsuperscript{th} December is shown in Figure
+\ref{FigureWireMeshNeumayer}.  Within the field of antenna engineering, a
+reflection coefficient of less than \SI{-10}{\deci\bel} across the desired
+signal bandwidth, i.e. greater than 90\% of power accepted by the antenna, is
+deemed to be acceptable.  It can be seen that during initial tests conducted
+\SI{500}{\metre} south-west of Neumayer Station the antennas have a measured
+$\left|S_{11}\right|_{\textrm{dB}}$ of less than \SI{-10}{\deci\bel} across the
+desired signal bandwidth of \SI{20}{\mega\hertz} to \SI{40}{\mega\hertz}.
+Discussion regarding the antenna orientation can be below.
 
 \paragraph*{Note:} After transport of the antennas from Neumayer III to the
 grounding line camp, it was found that one of the centre-pin conductors on the
@@ -338,9 +342,14 @@ ApRES radar was disconnected.  A radar echo from is visible at approximately
 \SI{250}{\metre} depth, which corresponds with the expected thickness of the ice
 shefl in the vicinity of the station.  The working explaination for the clear,
 high signal-to-noise ratio (SNR) echo from the ice-shelf base with no receiving
-antenna is that the echo is received by the transmitting antenna and coupled to
-the mixer through the ADP-2-1W power divider to the ADE-1HW mixer, shown in
-Figure \ref{FigureHFApRESRadarArchitecture}.
+antenna is that the echo is received by the transmitting antenna and coupled via
+the 5V power rail to the receive RF path.  Other coupling paths, such as from the
+transmit antenna to the mixer input or via a reflection from the disconnected
+receiver port, are ruled out because they would not exibit the \SI{10}{\decibel}
+step change in power with the value of the receive attenuator.  An alternative
+explanation to be explored through simulation is that the received signal is
+coupled through the coaxial cable connected to the receive port, acting as a
+poorly matched whip antenna.
 
 \begin{figure}[h]
   \centering
@@ -401,18 +410,21 @@ range) distortion present in signal resulting in reduced signal-to-noise ratio.}
 {12.158}
 {FigureHFApRESReconnectedAntenna}
 
-\paragraph*{Antenna orientation} was shown to be related to the coupling between
+\paragraph*{Antenna orientation} was shown to influence coupling between
 the transmit and receive antennas and the presence of high-power low frequency
 signals in the deramped FMCW voltage signal.  Broadside refers to the antennas
 positioned such that their phase centres are in line with the survey direction
 and their longest axes are orthogonal to the survey direction.  Endfire refers
 to the antennas positioned such that their longest axes are parallel to the
-survey direction.  Experiemnts repeated at Neumayer Station and the grounding
-line camp show that thwne antennas are aligned in a 'broadside' configuration
-they exhibit reduced near-range coupling compared to antennas separated by the
-same distance in an 'endfire' configuration.  The HF ApRES was then reconfigured to be operated with the SubZero rover in a
-broadside configuration, with an increased separation between the
-transmit and receive antennas of \SI{40}{\metre}.
+survey direction.  Experiemnts repeated at Neumayer Station (Figures
+\ref{FigureHFApRESEndfireNeumayer} and \ref{FigureHFApRESBroadsideNeumayer}) and
+the grounding line camp (Figures \ref{FigureHFApRESEndfireGroundingLine} and
+\ref{FigureHFApRESBroadsideGroundingLine}) show that thwne antennas are aligned
+in a 'broadside' configuration they exhibit reduced near-range coupling compared
+to antennas separated by the same distance in an 'endfire' configuration.  The
+HF ApRES was then reconfigured to be operated with the SubZero rover in a
+broadside configuration, with an increased separation between the transmit and
+receive antennas of \SI{40}{\metre}.
 
 \begin{figure}[htbp]
   \centering
@@ -520,6 +532,7 @@ transmit and receive antennas of \SI{40}{\metre}.
 {127}
 {12.238}
 {FigureHFApRESBroadsideGroundingLine}
+\clearpage
 
 \subsection{Synthetic Aperture Radar Measurements}
 The test site chosen for the HF ApRES SAR measurements was selected to coincide
@@ -627,6 +640,13 @@ are shown in Figure \ref{FigureHFApRESBackprojection}.
   flow.}
   \label{FigureHFApRESGNSS}
 \end{figure}
+
+\subsubsection{Kinematic Measurement}
+The kinematic measurements were made after the start and stop measurements along
+the same profile to provide a comparative dataset and explore the use of the
+ApRES radar as a mobile SAR.  Processing of the data is underway and not yet
+included in this report.
+
 \clearpage
 
 \pagebreak
@@ -647,5 +667,170 @@ are shown in Figure \ref{FigureHFApRESBackprojection}.
 % \end{minipage}
 
 
+\clearpage
+\appendix
+\section{HF ApRES Database Schemata}
+\label{AppendixHFApRESDatabaseSchemata}
+
+\newcommand{\sqlspectable}[2]{
+    \renewcommand{\arraystretch}{1.5}
+    \rowcolors{2}{gray!10}{white}
+    \begin{longtable}{l l >{\raggedright}p{3cm} >{\raggedright\arraybackslash}p{4cm}}
+        \caption{#2} \\
+        \hline
+        \rowcolor{gray!50}
+        \textbf{Fieldname} & \textbf{Datatype} & \textbf{Parameters} & \textbf{Description}\\
+        \hline
+        \endhead
+        \hline
+        \endfoot
+        #1
+    \end{longtable}
+}
+
+\subsection{Table `\texttt{measurements}'} 
+\sqlspectable{
+    %
+    measurement\_id & INTEGER & PRIMARY KEY & 
+    Unique identifier for each file. \\
+    %
+    filename & TEXT & NOT NULL & 
+    Filename without path. \\
+    %
+    path & TEXT & UNIQUE NOT NULL&
+    Path to file in UNIX form, relative to top-level project root. \\
+    %
+    name & TEXT & - &
+    The name associated with the measurement, used to group sets of 
+    measurements together. \\
+    %
+    timestamp & TEXT & UNIQUE ASC NOT NULL &
+    \texttt{YYYY-mm-dd HH:MM:SS.fff} formatted timestamp according to
+    time and date the measurement was taken. \\
+    %
+    valid & INTEGER & NOT NULL DEFAULT 0 &
+    Boolean indicator of whether file is valid. Assumes invalid by 
+    default. \\
+    %
+    base\_visible & INTEGER & NOT NULL DEFAULT 0 & 
+    Boolean indicator of whether basal reflector is visible in range data. \\
+    %
+    base\_range\_min & REAL & NOT NULL DEFAULT -1 & 
+    Minimum range (in steps of 50m) at which basal reflector can be found. \\
+    %
+    base\_range\_max & REAL & NOT NULL DEFAULT -1 & 
+    Maximum range (in steps of 50m) at which basal reflector can be found. \\
+    %
+    location & TEXT & - & 
+    Measurement location name. \\
+    % 
+    comments & TEXT & - &
+    Description and comments for measurement if relevant. \\
+    % 
+    latitude & REAL & - &
+    Latitude of measurement location if known. \\
+    %
+    longitude & REAL & - & 
+    Longitude of measurement location if known. \\
+    %
+    elevation & REAL & - & 
+    Elevation of measurement location if known (referenced to WGS84). \\
+    %
+    tags & TEXT & - & 
+    Annotation tags (i.e. \texttt{bad\_chirps}, \texttt{gps\_type}, ...). \\
+}
+{Specification for \texttt{measurements} table.}
+
+\newpage
+
+\subsection{Table `\texttt{apres\_metadata}'}
+The fields \texttt{id} and \texttt{burst\_id} make a unique pair to ensure
+that each burst within a \texttt{*.dat} file is only represented once.
+
+\sqlspectable{
+    %
+    id & INTEGER & PRIMARY KEY & 
+    Unique identifier for metadata.  Distinct from \texttt{measurement\_id}
+    in that each \texttt{*.dat} file can have multiple bursts.\\
+    %
+    burst\_id & INTEGER & NOT NULL &
+    Identifies the burst within a \texttt{*.dat} the metadata represents.\\
+    %
+    measurement\_id & INTEGER & NOT NULL & 
+    Identifies the file record where the metadata originates from. \\
+    %
+    % header\_index & INTEGER & NOT NULL DEFAULT 0 &
+    % Indicates the byte at which to start reading the header \\
+    % % 
+    % burst\_index & INTEGER & NOT NULL & 
+    % Indicates the byte at which to start reading the data associated with the burst \\
+    %
+    \hline
+    \multicolumn{4}{c}{\textit{ApRES Specific Metadata}} \\
+    \hline
+    %
+    timestamp & TEXT & NOT NULL & 
+    \texttt{YYYY-mm-dd HH:MM:SS.fff} formatted timestamp as logged in
+    \texttt{*.dat} file. \\
+    %
+    n\_attenuators & INTEGER & NOT NULL CHECK(\textgreater 0, \textless 5) & 
+    Number of attenuator settings used. \\
+    %
+    n\_chirps & INTEGER & NOT NULL CHECK(\textgreater 0) & 
+    Total number of individual chirps in file. \\
+    %
+    n\_subbursts & INTEGER & NOT NULL CHECK(\textgreater 0) &
+    Number of sub-bursts (repeats) of the burst configuration. \\
+    %
+    period & REAL & NOT NULL CHECK(\textgreater 0) & 
+    Chirp period in seconds. \\
+    %
+    f\_lower & REAL & NOT NULL CHECK($\ge$ 0) &
+    Lower bound of chirp ramp in Hertz. \\
+    %
+    f\_upper & REAL & NOT NULL CHECK($\ge$ 0) & 
+    Upper bound of chirp ramp in Hertz. \\
+    %
+    af\_gain & TEXT & NOT NULL &
+    Comma separated values indicating AF gain settings. \\
+    %
+    rf\_attenuator & TEXT & NOT NULL & 
+    Comma separated values indicating RF attenuator settings. \\
+    %
+    f\_sampling & REAL & NOT NULL CHECK(\textgreater 0) & 
+    Sampling frequency. \\
+    % 
+    tx\_antenna & TEXT & NOT NULL &
+    Transmit antenna selection in comma separated value format. \\
+    % 
+    rx\_antenna & TEXT & NOT NULL &
+    Receive antenna selection in comma separated value format. \\
+    % 
+    power\_code & INTEGER & - &
+    DDS output current power code, if available (dependent on firmware).\\
+    %
+    battery\_voltage & REAL & - &
+    Battery voltage, if available. \\
+    %
+    temperature\_1 & REAL & - &
+    Measured board temperature from sensor 1. \\
+    %
+    temperature\_2 & REAL & - & 
+    Measured board temperature from sensor 2. \\
+    %
+    rmb\_issue & TEXT & - & 
+    RMB issue number if available. \\
+    % 
+    vab\_issue & TEXT & - & 
+    VAB issue number if available. \\
+    %
+    venom\_issue & TEXT & - &
+    Venom issue number if available. \\
+    %
+    software\_issue & TEXT & - & 
+    VAB firmware issue number if available. \\
+}{
+    Specification for \texttt{apres\_metadata} table.
+}
 
 \end{document}

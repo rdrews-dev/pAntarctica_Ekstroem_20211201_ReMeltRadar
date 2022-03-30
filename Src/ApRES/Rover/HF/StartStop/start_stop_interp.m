@@ -103,6 +103,7 @@ sumTime = 0;
 
 processed = 0;
 
+%%
 while processed < nProfiles
 
     tic
