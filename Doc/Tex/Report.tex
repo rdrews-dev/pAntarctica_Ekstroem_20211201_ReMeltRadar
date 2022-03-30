@@ -37,6 +37,7 @@
 \setlength{\arrayrulewidth}{1mm}
 \setlength{\tabcolsep}{18pt}
 \renewcommand{\arraystretch}{1.5}
+\linespread{1.25} % also use linespacing > 1? JH 2022-03-21
 %\arrayrulecolor[HTML]{fffff}
 
 %Use this to customize colors
@@ -57,6 +58,67 @@
 \hline
 \end{tabular}
 \end{table}
+}
+
+% JH Added Packages
+\usepackage[bottom]{footmisc}
+\usepackage{siunitx}
+\usepackage[outline]{contour}
+\usepackage{tikz}
+\usetikzlibrary{positioning,calc}
+\usepackage{circuitikz}
+\usepackage{url}
+\usepackage{longtable}
+
+\definecolor{ucl_red}{HTML}{D50032}
+\definecolor{UCLdarkblue}{HTML}{003D4C}
+
+% Define ApRESDOC command to show details of ApRES profiles
+\newcommand{\apresdoc}[9]{
+    \def\tempapfname{#1}
+    \def\tempaploc{#2}
+    \def\tempapcom{#3}
+    \def\temptimestamp{#4}
+    \def\tempafgain{#5}
+    \def\temprfattn{#6}
+    \def\tempperiod{#7}
+    \def\tempflow{#8}
+    \def\tempfupp{#9}
+    \apresdoccont
+}
+\newcommand{\apresdoccont}[6]{
+  \def\tempnatt{#1}
+  \def\tempnchirp{#2}
+  \def\tempnsubburst{#3}
+  \def\temppowercode{#4}
+  \def\tempbattvolt{#5}
+  \def\tempaplbl{#6}
+
+  \begin{table}
+    \caption{\tempapcom}
+    \rowcolors{2}{gray!25}{white}
+    \centering
+    \includegraphics[width=0.9\textwidth]{Figures/ApRES/Rover/HF/\tempapfname.png}
+    \\
+    ~\\
+    \begin{tabular}{>{\bfseries}l l >{\bfseries}l l}
+      \hline
+      \rowcolor{gray!50}
+      \multicolumn{4}{c}{\textbf{Filename} \tempapfname} \\
+      \hline
+      Param. & \bfseries Value & Param. & \bfseries Value \\
+      AF Gain & \tempafgain &
+      RF Attn. & \temprfattn \\
+      Subbursts & \tempnsubburst &
+      Period ($T$) & \tempperiod~s \\
+      Bandwidth & \tempflow~-~\tempfupp~MHz &
+      Power Code & \temppowercode \\
+      Batt. Volt. & \tempbattvolt~V &
+      - & - \\
+      \hline
+    \end{tabular}
+    \label{\tempaplbl}
+  \end{table}
 }
 
 %Start the document here.
@@ -323,13 +385,470 @@ The MP\_A profile has been done with two different methods.
 %% ******************************************************
 %% ******************************************************
 \pagebreak
-%% ******************************************************
-%% ******************************************************
-\section{HF ApRES: Data example, field picture, system setup and profile specifics}
+\section{HF ApRES}
+%: Data example, field picture, system setup and profile specifics
 \label{SecHFApRES}
-\textbf{JH}
-%% ******************************************************
-%% ******************************************************
+
+\subsection{System Overview}
+The HF ApRES is a frequency modulated continuous wave (FMCW) radar with 
+a bandwidth of \SI{20}{\mega\hertz} to \SI{40}{\mega\hertz}.  It builds
+upon the existing phase-coherent radar architecture of the ApRES\footnote{
+  P. Brennan, L. Lok, K. Nicholls and H. Corr, "Phase‐sensitive FMCW radar 
+  system for high‐precision Antarctic ice shelf profile monitoring", IET 
+  Radar, Sonar \& Navigation, vol. 8, no. 7, pp. 776-786, 2014. Available: 
+  10.1049/iet-rsn.2013.0053.
+} but uses a modified radio front-end to operate at the reduced bandwidth
+described.  In addition to the radar, the HF ApRES makes use of two 'wire-mesh
+dipole' antennas - one each for the transmitter and receiver, and a 12V 
+\SI{7}{\ampere\hour} lead-acid battery for power.  Both the HF ApRES radar unit 
+and  the 'wire-mesh dipole' antennas had not been previously deployed on a 
+polar ice shelf.  The objectives for the HF ApRES system were therefore to test
+and validate its performance, then conduct a synthetic aperture radar survey of
+the ice-ocean interface of the ice shelf.
+
+\subsubsection{System Equipment Listing}
+\begin{itemize}
+  \item 1x HF ApRES (VAB Issue C and RMB2F in Pelicase)
+  \item 2x Wire-Mesh Dipole Antennas
+  \item Clusons 12V \SI{7}{\ampere\hour} Lead Acid Battery
+  \item 4x Radiall RG213 \SI{5}{\metre} 50$\Omega$ RF Cables (R284C0351044)
+  \item 2x Gigatronix LBC400 \SI{25}{\metre} 50$\Omega$ RF Cables (APX2KDP6ZAB40L)
+  \item 2x \SI{10}{\deci\bel} RF attenuators
+  \item Various RF connectors
+  \item Trimble R9s Modular GNSS System (receiver and base station with UHF
+  radio link)
+  \item Bamboo and 10mm kernmantle rope for towed configuration.
+\end{itemize}
+
+\begin{figure}[htbp]
+  \centering
+  
+  \begin{tikzpicture}[font=\sffamily]
+    \node[above right, inner sep=0, draw, black, line width=2pt] (img) at (0,0) {
+      \includegraphics[width=0.9\textwidth]{Figures/ApRES/Rover/HF/hf-apres-neumayer.jpg}
+    };
+    \begin{scope}[x={(img.south east)}, y={(img.north west)}]
+      
+      % Temporary grid
+      % \draw[gray,step=0.1] (img.south west) grid (img.north east);
+      % End temporary grid
+      \contourlength{1pt}
+      \node (tx_ant) at (0.16,0.375) {\contour{white}{\bfseries Tx Antenna}};
+      \node (rx_ant) at (0.85,0.375) {\contour{white}{\bfseries Rx Antenna}};
+      \node (rx_ant) at (0.5,0.5) {\contour{white}{\bfseries HF ApRES}};
+
+      \draw[latex-latex,ucl_red,line width=1pt] (0.25,0.38) -- 
+      node[midway,below] {\contour{white}{\bfseries 5-15m (End-End)}} (0.73,0.38);
+
+      \draw[latex-latex,ucl_red,line width=1pt] (0.16,0.6) -- 
+      node[midway,above] {\contour{white}{\bfseries 10-20m (Phase Centres)}} (0.85,0.6);
+    
+    \end{scope}
+
+  \end{tikzpicture}
+
+
+  \caption{
+    Deployed HF ApRES radar positioned in centre of transmit (Tx) and receive
+    (Rx) antennas in endfire configuration.
+  }
+  \label{FigHFApRESNeumayer}
+\end{figure}
+
+\subsection{Testing Summary}
+Testing was first conducted with the wire-mesh antennas to verify that they 
+met the power transfer characteristics predicted through simulation.  Once
+verified, a setup with the full HF ApRES system was configured and issues
+were found with strong coupling between the transmit and receive antennas.
+After further testing, it was found that broadside orientation of the antennas
+and increased separation reduced the direct coupling between the antennas 
+sufficiently for clean deramped signals to be recorded.
+
+
+\begin{table}
+  \rowcolors{2}{gray!25}{white}
+  \begin{tabular}{m{1.5cm} m{2.25cm} m{7cm} >{\raggedright\arraybackslash}m{3cm}}
+    \rowcolor{gray!50}
+    Date & Frequency & Profile & File-ID\\
+    \hline
+    27.12.21 & 30 MHz & Testing of antennas and HF ApRES near Neumayer & \textit{Testing.db} \\
+    28.12.21 & 30 MHz & (as above) & \textit{Testing.db} \\
+    29.12.21 & 30 MHz & (as above) & \textit{Testing.db} \\
+    30.12.21 & 30 MHz & (as above) & \textit{Testing.db} \\
+    02.01.22 & 30 MHz & Testing of HF ApRES at Camp & \textit{Testing.db} \\
+    03.01.22 & 30 MHz & (as above) & \textit{Testing.db} \\
+    04.01.22 & 30 MHz & (as above) & \textit{Testing.db} \\
+    05.01.22 & 30 MHz & (as above) & \textit{Testing.db} \\
+    06.01.22 & 30 MHz & Testing of HF ApRES at Camp and relocate to GL & \textit{Testing.db} \\
+    07.01.22 & 30 MHz & Initial measurements of start-stop survey at GL & \textit{Testing.db, StartStop.db} \\
+    08.01.22 & 30 MHz & Complete measurement of start-stop survey at GL and attempt kinematic surveys & \textit{Testing.db, StartStop.db} \\
+    \hline
+  \end{tabular}
+  \label{TableHFApRES}
+  \caption{Overview of measurements taken with HF ApRES System.  Individual data
+  files are described within the \textit{Testing} and \textit{StartStop}
+  databases.  Schema for the databases can be found in the Appendix
+  \ref{AppendixHFApRESDatabaseSchemata} of this report.} 
+\end{table}
+
+\subsubsection*{Wire-Mesh Dipole Antennas}
+The wire-mesh dipole antennas were each tested with an SDRKits Vector Network
+Analyzer (VNA) which allows for the measurement of the antenna reflection
+coefficient ($\Gamma$).  The reflection coefficient is calculated from the
+scattering parameters (s-parameters) measured by the VNA, where $S_{11}$ 
+refers to the complex phasor ratio between the scattered and incident voltages from
+the antenna.  The reflection coefficient can therefore be used to infer the 
+ratio of incident power to the antenna which is 'accepted' and sets an upper
+bound on the radiation efficiency.  The radiation efficiency of the antenna
+is the ratio of incident power to the antenna that is actually radiated
+rather than scattered back to the radar, or lost through conduction within the
+antenna structure.  Radiation efficiency is difficult to measure in a field 
+environment, hence the reflection coefficient is used to determine an upper
+bound.
+
+\begin{equation}
+  \left|\Gamma\right|_{\texttt{dB}} = 20\log_{10} \left|S_{11}\right|
+\end{equation}
+
+The measured reflection coefficient of the wire-mesh dipole antennas from tests
+on 28\textsuperscript{th} December is shown in Figure
+\ref{FigureWireMeshNeumayer}.  Within the field of antenna engineering, a
+reflection coefficient of less than \SI{-10}{\deci\bel} across the desired
+signal bandwidth, i.e. greater than 90\% of power accepted by the antenna, is
+deemed to be acceptable.  It can be seen that during initial tests conducted
+\SI{500}{\metre} south-west of Neumayer Station the antennas have a measured
+$\left|S_{11}\right|_{\textrm{dB}}$ of less than \SI{-10}{\deci\bel} across the
+desired signal bandwidth of \SI{20}{\mega\hertz} to \SI{40}{\mega\hertz}.
+Discussion regarding the antenna orientation can be below.
+
+\paragraph*{Note:} After transport of the antennas from Neumayer III to the
+grounding line camp, it was found that one of the centre-pin conductors on the
+antenna arms had become loose, likely due to a dry solder joint.
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth]{Figures/ApRES/Rover/HF/antenna_comparison_s11.png}
+  \caption{
+    Measured power reflection coefficient for HF wire-mesh dipole antennas, 
+    positioned approximately \SI{500}{\metre} south-west of Neumayer Station.
+  }
+  \label{FigureWireMeshNeumayer}
+\end{figure}
+
+\subsubsection*{HF ApRES Radar}
+Figure \ref{FigureHFApRESNoReceiveAntenna} shows a meaured test profile at
+Neumayer Station where it was discovered that the receiving antenna of the HF
+ApRES radar was disconnected.  A radar echo from is visible at approximately 
+\SI{250}{\metre} depth, which corresponds with the expected thickness of the ice
+shefl in the vicinity of the station.  The working explaination for the clear,
+high signal-to-noise ratio (SNR) echo from the ice-shelf base with no receiving
+antenna is that the echo is received by the transmitting antenna and coupled via
+the 5V power rail to the receive RF path.  Other coupling paths, such as from the
+transmit antenna to the mixer input or via a reflection from the disconnected
+receiver port, are ruled out because they would not exibit the \SI{10}{\decibel}
+step change in power with the value of the receive attenuator.  An alternative
+explanation to be explored through simulation is that the received signal is
+coupled through the coaxial cable connected to the receive port, acting as a
+poorly matched whip antenna.
+
+\begin{figure}[h]
+  \centering
+  \input{Figures/ApRES/Rover/HF/apres_updated_rf_chain.tikz}
+  \caption{
+    System level diagram of the RMB2F radar, showing the signal path from the
+    direct digital synthetiser (DDS) to the transmit output, receiver input and
+    ouput deramped FMCW signal.}
+  \label{FigureHFApRESRadarArchitecture}
+\end{figure}
+
+\apresdoc
+{2021-12-28\_213752.dat}
+{Neumayer III}
+{Antennas aligned E-W, no receive antenna connected but clear return from
+ice-shelf base and double bounce.}
+{2021-12-28 21:37:53.000}
+{6,6,6,6}
+{30,20,10,0}
+{1.000}
+{20}
+{40}
+{4}
+{40}
+{10}
+{127}
+{12.129}
+{FigureHFApRESNoReceiveAntenna}
+
+Reconnecting the receiver antenna, as shown in Figure
+\ref{FigureHFApRESReconnectedAntenna} results in sigificant distortion visible
+in the time-domain FMCW voltage signal, matched with the reduced SNR seen in the
+range-power profile.  Overall power is increased relative to Figure
+\ref{FigureHFApRESNoReceiveAntenna}, which gives confidence that the antenna was
+not connected and has been successfully reconnected in the second dataset.  The
+distortion is characteristic of 'clipping' where the recorded signal exceeds the
+voltage range of the analogue-to-digital converter and the output is
+subsequently 'clipped' to be within this range.  The evidence of clipping, at
+low frequencies corresponding to short range echoes suggests that the direct
+coulping between the antennas is higher than experienced from a previous
+deployment of the HF ApRES radar on an Alpine glacier. 
+
+\apresdoc
+{2021-12-28\_214326.dat}
+{Neumayer III}
+{Antennas aligned E-W, receive antenna reconnected and low-frequency (i.e. near
+range) distortion present in signal resulting in reduced signal-to-noise ratio.}
+{2021-12-28 21:43:26.000}
+{6,6,6,6}
+{30,20,10,0}
+{1.000}
+{20}
+{40}
+{4}
+{40}
+{10}
+{127}
+{12.158}
+{FigureHFApRESReconnectedAntenna}
+
+\paragraph*{Antenna orientation} was shown to influence coupling between
+the transmit and receive antennas and the presence of high-power low frequency
+signals in the deramped FMCW voltage signal.  Broadside refers to the antennas
+positioned such that their phase centres are in line with the survey direction
+and their longest axes are orthogonal to the survey direction.  Endfire refers
+to the antennas positioned such that their longest axes are parallel to the
+survey direction.  Experiemnts repeated at Neumayer Station (Figures
+\ref{FigureHFApRESEndfireNeumayer} and \ref{FigureHFApRESBroadsideNeumayer}) and
+the grounding line camp (Figures \ref{FigureHFApRESEndfireGroundingLine} and
+\ref{FigureHFApRESBroadsideGroundingLine}) show that thwne antennas are aligned
+in a 'broadside' configuration they exhibit reduced near-range coupling compared
+to antennas separated by the same distance in an 'endfire' configuration.  The
+HF ApRES was then reconfigured to be operated with the SubZero rover in a
+broadside configuration, with an increased separation between the transmit and
+receive antennas of \SI{40}{\metre}.
+
+\begin{figure}[htbp]
+  \centering
+  \begin{tikzpicture}[font=\sffamily]
+    \node[above right, inner sep=0, draw, black, line width=2pt] (img) at (0,0) {
+      \includegraphics[width=0.8\textwidth]{Figures/ApRES/Rover/HF/hf-apres-subzero.jpg}
+    };
+    \begin{scope}[x={(img.south east)}, y={(img.north west)}]
+      
+      % Temporary grid
+      % \draw[gray,step=0.1] (img.south west) grid (img.north east);
+      % End temporary grid
+
+      \contourlength{1pt}
+      \node[anchor=east] at (0.33, 0.8) {\contour{white}{ UHF control radio}};
+      \node[anchor=east] at (0.31, 0.6) {\contour{white}{Backup GPS}};
+      \node[anchor=south] at (0.42, 0.63) {\contour{white}{RTK-GPS}};
+      \node[anchor=west] at (0.87, 0.73) {\contour{white}{Tx}};
+      \node[anchor=west] at (0.92, 0.62) {\contour{white}{Rx}};
+      \node[anchor=west] at (0.65, 0.52) {\contour{white}{HF ApRES}};
+      \node[anchor=south] at (0.24, 0.29) {\contour{white}{IMU}};
+      \node[anchor=south] at (0.82, 0.73) {\contour{white}{IMU}};
+      \node[anchor=south east] at (0.72,0.65) {\contour{white}{IMU}};
+
+      % Draw distance labels
+      \draw[latex-latex, line width=0.5pt, ucl_red] (0.81,0.72) -- 
+        node[midway,above,anchor=south east,inner sep=1pt,ucl_red] {\contour{white}{40m}} (0.73,0.645);
+      \draw[latex-latex, line width=0.5pt, ucl_red] (0.72,0.63) -- 
+        node[midway,above,anchor=south east,inner sep=1pt,ucl_red] {\contour{white}{10m}} (0.652,0.552);
+      \draw[latex-latex, line width=0.5pt, ucl_red] (0.6,0.5) --
+        node[midway,above,ucl_red] {\contour{white}{10m}} (0.45,0.4);
+      % \draw[ucl_red, line width=1pt] (0.76, 0.4) rectangle (0.83, 0.8);
+      % \node[ucl_red, anchor=south] at (0.79, 0.8) {\contour{white}{\scriptsize 10dB Atten.}};
+
+    \end{scope}
+  \end{tikzpicture}
+  \caption{
+    SubZero rover and HF ApRES configuration used for start-stop and kinematic
+    synthetic aperture radar acquisitions at groundling line.
+  }
+  \label{FigureHFApRESSubZeroConfiguration}
+\end{figure}
+
+\apresdoc
+{2021-12-29\_215659.dat}
+{Neumayer III,500m W of Station}
+{\textbf{Antenna Orientation: Endfire, Neumayer}. No additional attenuations. Antennas rotated so they are aligned N-S and cables N-S.  Similar to above but with noise in upper layers. 14m separation.  Cables 'smooth' in line with antennas.  Reduced power code to 0.}
+{2021-12-29 21:58:31.000}
+{6,6,6,6}
+{30,20,10,0}
+{1.000}
+{20}
+{40}
+{4}
+{4}
+{1}
+{0}
+{12.266}
+{FigureHFApRESEndfireNeumayer}
+
+\apresdoc{2021-12-29\_220442.dat}
+{Neumayer III,500m W of Station}
+{\textbf{Antenna Orientation: Broadside, Neumayer}. No additional attenuations. Antennas rotated so they are aligned E-W but Tx at N and Rx at S.  Similar to above but with noise in upper layers. 14m separation.  Cables 'smooth' in line with antennas.  Reduced power code to 0.}
+{2021-12-29 22:04:45.000}
+{6,6,6,6}
+{30,20,10,0}
+{1.000}
+{20}
+{40}
+{4}
+{4}
+{1}
+{0}
+{12.258}
+{FigureHFApRESBroadsideNeumayer}
+
+\apresdoc{2022-01-05\_174254.dat}
+{Grounding Line Camp}
+{\textbf{Antenna Orientation: Endfire, Grounding Line}. Additional attenuator 10dB Rx, 0dB Tx.  Cable length Tx 25m, Rx 25m and separate antennas to maximum length (30m).  Antennas return to endfire.  Clipping across all AF settings.  No clear basal return.}
+{2022-01-05 17:43:31.000}
+{-14,-4,6}
+{0,0,0}
+{1.000}
+{20}
+{40}
+{3}
+{120}
+{40}
+{127}
+{12.238}
+{FigureHFApRESEndfireGroundingLine}
+
+\apresdoc{2022-01-05\_171029.dat}
+{Grounding Line Camp}
+{\textbf{Antenna Orientation: Broadside, Grounding Line}. Additional attenuator 10dB Rx, 0dB Tx.  Increase Tx cable to 25m (Rx 5m) and separate antennas to maximum length (30m).  Antennas rotated broadside.  Bed clearer (higher SNR)? Some clipping in signal.  Repeated as before - ringing reduced?}
+{2022-01-05 17:10:51.000}
+{-14,-4,6}
+{0,0,0}
+{1.000}
+{20}
+{40}
+{3}
+{120}
+{40}
+{127}
+{12.238}
+{FigureHFApRESBroadsideGroundingLine}
+\clearpage
+
+\subsection{Synthetic Aperture Radar Measurements}
+The test site chosen for the HF ApRES SAR measurements was selected to coincide
+with the series of basal terraces observed in the PulseEKKO data located in the
+finely gridded region of Figure \ref{fig:overview}.  The HF ApRES system was
+towed into position on 7\textsuperscript{th} January, configured according to
+\ref{FigureHFApRESSubZeroConfiguration} and initial testing was conducted,
+including the resolution of a software navigation issue with the rover.  Two
+modes of measurement were conducted with the HF ApRES: a start-stop profile
+where the instrument was repositioned in steps of \SI{1}{\metre} increments
+along the desired profile direct, and kinematic profiles where the radar was set
+to continuously measure while towed along the profile by the SubZero rover at
+speeds of approximately \SI{0.7}{\metre\per\second} to
+\SI{1}{\metre\per\second}.  For all measurement modes, the radar was configured
+with the parameters listed in Table \ref{TableHFApRESMeasurementParams}.  The 
+VV notation for the polarisation is consistent with that of the rover-towed VHF
+system, however the precise polarisation response of the wire-mesh dipole
+antennas has not been measured.
+
+\begin{table}[h]
+  \rowcolors{2}{gray!25}{white}
+  \centering\begin{tabular}{l c r l}
+    \hline
+    \rowcolor{gray!50}
+    Parameter & Symbol & \multicolumn{2}{c}{Value} \\
+    \hline
+    Centre Frequency & $f_c$ & 30 & \si{\mega\hertz} \\
+    Bandwidth & $B$ & 20 & \si{\mega\hertz} \\
+    Pulse Duration & $T$ & 1 & \si{\second} \\
+    Transmit Power & $P_T$ & 0.1 & \si{\watt} \\
+    AF Gain & $G_{AF}$ & 6 & \si{\deci\bel} \\
+    RF Attenuation & $A_{RF}$ & 10 & \si{\deci\bel} \\
+    RF Atten. (External) & $A_{RFExt}$ & 10 &  \si{\deci\bel} \\
+    Antenna Separation & $S_{Ant}$ & 40 & \si{\metre} \\
+    Rover Separation & $S_{Rov}$ & 10 & \si{\metre} \\
+    Polarisation & - & VV & - \\
+    \hline
+    
+  \end{tabular}
+  \caption{Radar configuration parameters common to both the start-stop and
+  kinematic the HF ApRES SAR measurements}
+  \label{TableHFApRESMeasurementParams}
+\end{table}
+
+\subsubsection{Start-Stop Measurement}
+On the 7\textsuperscript{th} January, \SI{192}{\metre} of the intended profile
+was covered .  The rover was left in position overnight and the profile was
+resumed to cover the remaining \SI{710}{\metre} over approximately 5 hours,
+including aapproximately one hour of cumulative downtime. The Trimble R9s base
+station was set up approximately \SI{40}{\metre} away from the profile at its
+centre.  The RINEX files generated by the GNSS receivers at the base station and
+on the rover were processed using the Canadian Spatial Reference System Precise
+Point Positioning service\footnote{Full details can be found in
+\texttt{Raw/RTKGPS/ApRES/Rover/HF/processing\_notes.md}} and are shown in Figure 
+\ref{FigureHFApRESGNSS}.  There are tidal and ice flow components present in the
+raw position data.  The ice velocity ($v$) is assumed constant along the length
+of the profile from analysis of the \SI{120}{\metre} composite ITS\_LIVE data
+for 2020.  The tidal components of the measured elevation were analysed using
+the Tidal Fitting Toolbox \footnote{\url{https://uk.mathworks.com/matlabcentral/fileexchange/19099-tidal-fitting-toolbox}}
+but have not yet been validated with external data.  It is assumed that the
+tidal components are also locally invariant and therefore the relative position
+of the rover to the base is initially found through subtraction of the base
+station coordinates from the rover coordinates. Phase and power of raw data is 
+shown in Figure \ref{FigureHFApRESRaw}.
+
+\begin{figure}[h!]
+  \centering 
+  \includegraphics{../../Doc/ApRES/Rover/HF/StartStop/StartStopRawData.png}
+  \caption{Phase and power of raw, unprocessed ApRES data collected along the
+  profile.}
+  \label{FigureHFApRESRaw}
+\end{figure}
+
+Initial SAR processing of the dataset was performed using an interpolated 
+$\textrm{sinc}$ routine using the MATLAB\copyright~ ApRESProcessor library\footnote{
+\url{https://github.com/jonodhawkins/apresprocessor}} with a constant velocity
+travel-time model using a dielectric permittivity for ice of $3.15$.  Antenna
+positions were modelled to be \SI{50}{\metre} and \SI{10}{\metre} behind the
+rover, in the direction of the image plane, as per the system setup indicated in
+Figure \ref{FigureHFApRESSubZeroConfiguration}. For the
+intial pass, bursts with low signal to noise ratios compared to the mean of the
+dataset were excluded however further passes will select individual chirps from
+these bursts to maximise the number of radar locations at which the
+backprojection is performed.  Results of the backprojection in power and phase
+are shown in Figure \ref{FigureHFApRESBackprojection}.
+
+\begin{figure}[h]
+  \centering 
+  \includegraphics{../../Doc/ApRES/Rover/HF/StartStop/StartStopInitialInterp.png}
+  \caption{Phase and power of initial backprojected (SAR processed) image from
+  the HF ApRES towed by the SubZero rover.  The coordinate system for the image
+  is relative polar stereographic to the Trimble GPS base station.  Pixel
+  resolution is \SI{4}{\metre}.}
+  \label{FigureHFApRESBackprojection}
+\end{figure}
+
+\begin{figure}[h!]
+  \centering 
+  \includegraphics{../../Doc/ApRES/Rover/HF/StartStop/StartStopRTKPositions.png}
+  \includegraphics{../../Doc/ApRES/Rover/HF/StartStop/StartStopRoverPositions.png}
+  \caption{Precise point positioned GPS outputs from Canadian Spatial Reference
+  System for rover and base station.  Gray highlighted areas show periods of rover
+  operation.  Second plot shows derived relative position of rover to base 
+  station, mitigating tidal flexure of ice shelf and positional drift from ice 
+  flow.}
+  \label{FigureHFApRESGNSS}
+\end{figure}
+
+\subsubsection{Kinematic Measurement}
+The kinematic measurements were made after the start and stop measurements along
+the same profile to provide a comparative dataset and explore the use of the
+ApRES radar as a mobile SAR.  Processing of the data is underway and not yet
+included in this report.
+
+\clearpage
+
 \pagebreak
 %% ******************************************************
 %% ******************************************************
@@ -385,5 +904,170 @@ The MP\_A profile has been done with two different methods.
 % \end{minipage}
 
 
+\clearpage
+\appendix
+\section{HF ApRES Database Schemata}
+\label{AppendixHFApRESDatabaseSchemata}
+
+\newcommand{\sqlspectable}[2]{
+    \renewcommand{\arraystretch}{1.5}
+    \rowcolors{2}{gray!10}{white}
+    \begin{longtable}{l l >{\raggedright}p{3cm} >{\raggedright\arraybackslash}p{4cm}}
+        \caption{#2} \\
+        \hline
+        \rowcolor{gray!50}
+        \textbf{Fieldname} & \textbf{Datatype} & \textbf{Parameters} & \textbf{Description}\\
+        \hline
+        \endhead
+        \hline
+        \endfoot
+        #1
+    \end{longtable}
+}
+
+\subsection{Table `\texttt{measurements}'} 
+\sqlspectable{
+    %
+    measurement\_id & INTEGER & PRIMARY KEY & 
+    Unique identifier for each file. \\
+    %
+    filename & TEXT & NOT NULL & 
+    Filename without path. \\
+    %
+    path & TEXT & UNIQUE NOT NULL&
+    Path to file in UNIX form, relative to top-level project root. \\
+    %
+    name & TEXT & - &
+    The name associated with the measurement, used to group sets of 
+    measurements together. \\
+    %
+    timestamp & TEXT & UNIQUE ASC NOT NULL &
+    \texttt{YYYY-mm-dd HH:MM:SS.fff} formatted timestamp according to
+    time and date the measurement was taken. \\
+    %
+    valid & INTEGER & NOT NULL DEFAULT 0 &
+    Boolean indicator of whether file is valid. Assumes invalid by 
+    default. \\
+    %
+    base\_visible & INTEGER & NOT NULL DEFAULT 0 & 
+    Boolean indicator of whether basal reflector is visible in range data. \\
+    %
+    base\_range\_min & REAL & NOT NULL DEFAULT -1 & 
+    Minimum range (in steps of 50m) at which basal reflector can be found. \\
+    %
+    base\_range\_max & REAL & NOT NULL DEFAULT -1 & 
+    Maximum range (in steps of 50m) at which basal reflector can be found. \\
+    %
+    location & TEXT & - & 
+    Measurement location name. \\
+    % 
+    comments & TEXT & - &
+    Description and comments for measurement if relevant. \\
+    % 
+    latitude & REAL & - &
+    Latitude of measurement location if known. \\
+    %
+    longitude & REAL & - & 
+    Longitude of measurement location if known. \\
+    %
+    elevation & REAL & - & 
+    Elevation of measurement location if known (referenced to WGS84). \\
+    %
+    tags & TEXT & - & 
+    Annotation tags (i.e. \texttt{bad\_chirps}, \texttt{gps\_type}, ...). \\
+}
+{Specification for \texttt{measurements} table.}
+
+\newpage
+
+\subsection{Table `\texttt{apres\_metadata}'}
+The fields \texttt{id} and \texttt{burst\_id} make a unique pair to ensure
+that each burst within a \texttt{*.dat} file is only represented once.
+
+\sqlspectable{
+    %
+    id & INTEGER & PRIMARY KEY & 
+    Unique identifier for metadata.  Distinct from \texttt{measurement\_id}
+    in that each \texttt{*.dat} file can have multiple bursts.\\
+    %
+    burst\_id & INTEGER & NOT NULL &
+    Identifies the burst within a \texttt{*.dat} the metadata represents.\\
+    %
+    measurement\_id & INTEGER & NOT NULL & 
+    Identifies the file record where the metadata originates from. \\
+    %
+    % header\_index & INTEGER & NOT NULL DEFAULT 0 &
+    % Indicates the byte at which to start reading the header \\
+    % % 
+    % burst\_index & INTEGER & NOT NULL & 
+    % Indicates the byte at which to start reading the data associated with the burst \\
+    %
+    \hline
+    \multicolumn{4}{c}{\textit{ApRES Specific Metadata}} \\
+    \hline
+    %
+    timestamp & TEXT & NOT NULL & 
+    \texttt{YYYY-mm-dd HH:MM:SS.fff} formatted timestamp as logged in
+    \texttt{*.dat} file. \\
+    %
+    n\_attenuators & INTEGER & NOT NULL CHECK(\textgreater 0, \textless 5) & 
+    Number of attenuator settings used. \\
+    %
+    n\_chirps & INTEGER & NOT NULL CHECK(\textgreater 0) & 
+    Total number of individual chirps in file. \\
+    %
+    n\_subbursts & INTEGER & NOT NULL CHECK(\textgreater 0) &
+    Number of sub-bursts (repeats) of the burst configuration. \\
+    %
+    period & REAL & NOT NULL CHECK(\textgreater 0) & 
+    Chirp period in seconds. \\
+    %
+    f\_lower & REAL & NOT NULL CHECK($\ge$ 0) &
+    Lower bound of chirp ramp in Hertz. \\
+    %
+    f\_upper & REAL & NOT NULL CHECK($\ge$ 0) & 
+    Upper bound of chirp ramp in Hertz. \\
+    %
+    af\_gain & TEXT & NOT NULL &
+    Comma separated values indicating AF gain settings. \\
+    %
+    rf\_attenuator & TEXT & NOT NULL & 
+    Comma separated values indicating RF attenuator settings. \\
+    %
+    f\_sampling & REAL & NOT NULL CHECK(\textgreater 0) & 
+    Sampling frequency. \\
+    % 
+    tx\_antenna & TEXT & NOT NULL &
+    Transmit antenna selection in comma separated value format. \\
+    % 
+    rx\_antenna & TEXT & NOT NULL &
+    Receive antenna selection in comma separated value format. \\
+    % 
+    power\_code & INTEGER & - &
+    DDS output current power code, if available (dependent on firmware).\\
+    %
+    battery\_voltage & REAL & - &
+    Battery voltage, if available. \\
+    %
+    temperature\_1 & REAL & - &
+    Measured board temperature from sensor 1. \\
+    %
+    temperature\_2 & REAL & - & 
+    Measured board temperature from sensor 2. \\
+    %
+    rmb\_issue & TEXT & - & 
+    RMB issue number if available. \\
+    % 
+    vab\_issue & TEXT & - & 
+    VAB issue number if available. \\
+    %
+    venom\_issue & TEXT & - &
+    Venom issue number if available. \\
+    %
+    software\_issue & TEXT & - & 
+    VAB firmware issue number if available. \\
+}{
+    Specification for \texttt{apres\_metadata} table.
+}
 
 \end{document}

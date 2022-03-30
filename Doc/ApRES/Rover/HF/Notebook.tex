@@ -1,0 +1,310 @@
+% -----------------------------------------------------------------------------
+% Created:      2022-01-27
+% Description:  Write-up of JH notebook and file log
+%
+% Requires:     csvsimple 
+% -----------------------------------------------------------------------------
+
+\documentclass[a4paper]{article}
+
+
+% csvsimple package is required to load text from CSV files into tabular form
+\usepackage{csvsimple}
+\usepackage{xstring}
+\usepackage{longtable}
+\usepackage[table]{xcolor}
+\usepackage{hyperref}
+
+% array package for column modifications (emphasis)
+\usepackage{array}
+
+% for convering datetimes
+\usepackage[british,showdow]{datetime2}
+
+\usepackage{tikz}
+
+\newcommand\hfaprestable[9]{
+    % Arguments
+    %   1 - filename
+    %   2 - number of sub bursts
+    %   3 - number of attenuator settings
+    %   4 - AF gain (list)
+    %   5 - RF attenuator (list)
+    %   6 - lower frequency
+    %   7 - upper frequency
+    %   8 - chirp period
+    %   9 - location
+    %  10 - comments
+    \def\temphftfolder{#1}
+    \def\temphftfilename{#2}%
+    \def\temphftsubbursts{#3}%
+    \def\temphftnoattn{#4}
+    \def\temphftaf{#5}%
+    \def\temphftrf{#6}%
+    \def\temphftlowfreq{#7}%
+    \def\temphftupfreq{#8}%
+    \def\temphftchirp{#9}%
+    \hfaprestablecont
+}
+
+\newcommand{\apresdoc}[9]{
+    \def\tempapfname{#1}
+    \def\tempaploc{#2}
+    \def\tempapcom{#3}
+    \def\temptimestamp{#4}
+    \def\tempafgain{#5}
+    \def\temprfattn{#6}
+    \def\tempperiod{#7}
+    \def\tempflow{#8}
+    \def\tempfupp{#9}
+    \apresdoccont
+}
+\newcommand{\apresdoccont}[5]{
+    \def\tempnatt{#1}
+    \def\tempnchirp{#2}
+    \def\tempnsubburst{#3}
+    \def\temppowercode{#4}
+    \def\tempbattvolt{#5}
+
+    \renewcommand{\arraystretch}{1.5}
+    \rowcolors{2}{gray!10}{white}
+    \begin{longtable}{>{\small\bfseries\raggedright}p{0.25\textwidth} >{\small\raggedright\arraybackslash}p{0.75\textwidth}}
+        \hline
+        \multicolumn{2}{c}{\bfseries Filename: \tempapfname} \\
+        \hline
+        \multicolumn{2}{c}{\includegraphics[width=\textwidth]{Testing/figures/\tempapfname.png}} \\
+        \hline
+        Time & \temptimestamp \\
+        Location & \tempaploc \\
+        Comments & \tempapcom \\
+        AF Gain & \tempafgain \\
+        RF Attenuation & \temprfattn \\
+        Period & \tempperiod~s \\
+        Bandwidth & \tempflow~Hz to \tempfupp~Hz \\
+        N. Attenuators & \tempnatt \\
+        N. Sub Bursts & \tempnsubburst \\
+        Power Code & \temppowercode \\
+        Battery Voltage & \tempbattvolt~V \\
+        \hline
+    \end{longtable}
+
+    % \subsubsection*{\tempapfname}
+    % \includegraphics[width=\textwidth]{Testing/figures/\tempapfname.png}
+    % \paragraph{Location:} \tempaploc
+    % \paragraph{Comments:} \tempapcom
+    \newpage
+}
+
+% -----------------------------------------------------------------------------
+% Define command for database defintion tables
+\newcommand{\sqlspectable}[2]{
+    \renewcommand{\arraystretch}{1.5}
+    \rowcolors{2}{gray!10}{white}
+    \begin{longtable}{l l >{\raggedright}p{3cm} >{\raggedright\arraybackslash}p{4cm}}
+        \caption{#2} \\
+        \hline
+        \textbf{Fieldname} & \textbf{Datatype} & \textbf{Parameters} & \textbf{Description}\\
+        \hline
+        \endhead
+        \hline
+        \endfoot
+        #1
+    \end{longtable}
+}
+
+% -----------------------------------------------------------------------------
+% Define new date style for subsection titles
+
+% -----------------------------------------------------------------------------
+% Title
+\title{\textbf{Notebook Summary for HF ApRES Experiments}}
+\author{J.D.~Hawkins}
+
+\begin{document}
+
+    \maketitle
+    
+    \newpage
+
+    \tableofcontents
+
+    \newpage
+
+    \section{Database Structure}
+
+    \subsection{Table `\texttt{measurements}'} 
+    \sqlspectable{
+        %
+        measurement\_id & INTEGER & PRIMARY KEY & 
+        Unique identifier for each file. \\
+        %
+        filename & TEXT & NOT NULL & 
+        Filename without path. \\
+        %
+        path & TEXT & UNIQUE NOT NULL&
+        Path to file in UNIX form, relative to top-level project root. \\
+        %
+        name & TEXT & - &
+        The name associated with the measurement, used to group sets of 
+        measurements together. \\
+        %
+        timestamp & TEXT & UNIQUE ASC NOT NULL &
+        \texttt{YYYY-mm-dd HH:MM:SS.fff} formatted timestamp according to
+        time and date the measurement was taken. \\
+        %
+        valid & INTEGER & NOT NULL DEFAULT 0 &
+        Boolean indicator of whether file is valid. Assumes invalid by 
+        default. \\
+        %
+        base\_visible & INTEGER & NOT NULL DEFAULT 0 & 
+        Boolean indicator of whether basal reflector is visible in range data. \\
+        %
+        base\_range\_min & REAL & NOT NULL DEFAULT -1 & 
+        Minimum range (in steps of 50m) at which basal reflector can be found. \\
+        %
+        base\_range\_max & REAL & NOT NULL DEFAULT -1 & 
+        Maximum range (in steps of 50m) at which basal reflector can be found. \\
+        %
+        location & TEXT & - & 
+        Measurement location name. \\
+        % 
+        comments & TEXT & - &
+        Description and comments for measurement if relevant. \\
+        % 
+        latitude & REAL & - &
+        Latitude of measurement location if known. \\
+        %
+        longitude & REAL & - & 
+        Longitude of measurement location if known. \\
+        %
+        elevation & REAL & - & 
+        Elevation of measurement location if known (referenced to WGS84). \\
+    }
+    {Specification for \texttt{measurements} table.}
+    
+    \newpage
+
+    \subsection{Table `\texttt{apres\_metadata}'}
+    The fields \texttt{id} and \texttt{burst\_id} make a unique pair to ensure
+    that each burst within a \texttt{*.dat} file is only represented once.
+
+    \sqlspectable{
+        %
+        id & INTEGER & PRIMARY KEY & 
+        Unique identifier for metadata.  Distinct from \texttt{measurement\_id}
+        in that each \texttt{*.dat} file can have multiple bursts.\\
+        %
+        burst\_id & INTEGER & NOT NULL &
+        Identifies the burst within a \texttt{*.dat} the metadata represents.\\
+        %
+        measurement\_id & INTEGER & NOT NULL & 
+        Identifies the file record where the metadata originates from. \\
+        %
+        % header\_index & INTEGER & NOT NULL DEFAULT 0 &
+        % Indicates the byte at which to start reading the header \\
+        % % 
+        % burst\_index & INTEGER & NOT NULL & 
+        % Indicates the byte at which to start reading the data associated with the burst \\
+        %
+        \hline
+        \multicolumn{4}{c}{\textit{ApRES Specific Metadata}} \\
+        \hline
+        %
+        timestamp & TEXT & NOT NULL & 
+        \texttt{YYYY-mm-dd HH:MM:SS.fff} formatted timestamp as logged in
+        \texttt{*.dat} file. \\
+        %
+        n\_attenuators & INTEGER & NOT NULL CHECK(\textgreater 0, \textless 5) & 
+        Number of attenuator settings used. \\
+        %
+        n\_chirps & INTEGER & NOT NULL CHECK(\textgreater 0) & 
+        Total number of individual chirps in file. \\
+        %
+        n\_subbursts & INTEGER & NOT NULL CHECK(\textgreater 0) &
+        Number of sub-bursts (repeats) of the burst configuration. \\
+        %
+        period & REAL & NOT NULL CHECK(\textgreater 0) & 
+        Chirp period in seconds. \\
+        %
+        f\_lower & REAL & NOT NULL CHECK($\ge$ 0) &
+        Lower bound of chirp ramp in Hertz. \\
+        %
+        f\_upper & REAL & NOT NULL CHECK($\ge$ 0) & 
+        Upper bound of chirp ramp in Hertz. \\
+        %
+        af\_gain & TEXT & NOT NULL &
+        Comma separated values indicating AF gain settings. \\
+        %
+        rf\_attenuator & TEXT & NOT NULL & 
+        Comma separated values indicating RF attenuator settings. \\
+        %
+        f\_sampling & REAL & NOT NULL CHECK(\textgreater 0) & 
+        Sampling frequency. \\
+        % 
+        tx\_antenna & TEXT & NOT NULL &
+        Transmit antenna selection in comma separated value format. \\
+        % 
+        rx\_antenna & TEXT & NOT NULL &
+        Receive antenna selection in comma separated value format. \\
+        % 
+        power\_code & INTEGER & - &
+        DDS output current power code, if available (dependent on firmware).\\
+        %
+        battery\_voltage & REAL & - &
+        Battery voltage, if available. \\
+        %
+        temperature\_1 & REAL & - &
+        Measured board temperature from sensor 1. \\
+        %
+        temperature\_2 & REAL & - & 
+        Measured board temperature from sensor 2. \\
+        %
+        rmb\_issue & TEXT & - & 
+        RMB issue number if available. \\
+        % 
+        vab\_issue & TEXT & - & 
+        VAB issue number if available. \\
+        %
+        venom\_issue & TEXT & - &
+        Venom issue number if available. \\
+        %
+        software\_issue & TEXT & - & 
+        VAB firmware issue number if available. \\
+    }{
+        Specification for \texttt{apres\_metadata} table.
+    }
+    
+    \newpage
+
+    \subsection{Table `\texttt{data}'}
+    \sqlspectable{
+        data\_id & INTEGER & PRIMARY KEY & 
+        Unique identifier for each data item stored in \texttt{/Proc}. \\
+        %
+        measurement\_id & INTEGER & NOT NULL &
+        Linked identified to \texttt{measurements} table for source of
+        data. \\
+        % 
+        filename & TEXT & NOT NULL &
+        Filename for processed data item stored in \texttt{/Proc}. \\
+        %
+        path & TEXT & NOT NULL & 
+        Path to file in UNIX form, relative to top-level project root. \\
+        %
+        timestamp&  TEXT & ASC NOT NULL &
+        \texttt{YYYY-mm-dd HH:MM:SS.SSS} formatted timestamp corresponding
+        to time at which data was processed. \\
+        %
+        processing\_steps & TEXT & - & 
+        Description of processing steps used to produced data file. \\
+        %
+    }
+    {Specification for \texttt{data} table.}
+
+    \newpage
+
+    \section{Testing}
+
+    \input{Testing/file_doc.tex}
+
+\end{document}

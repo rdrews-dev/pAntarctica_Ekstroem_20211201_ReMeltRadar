@@ -1,0 +1,79 @@
+\begin{circuitikz}[font=\scriptsize,american,scale=0.75,transform shape,node distance=1.6]
+
+  \coordinate (dds_out) at (0,0);
+  \coordinate[right=of dds_out] (dds_attn);
+  \coordinate[right=of dds_attn] (adl5535);
+  \coordinate[right=of adl5535] (adl5535_attn);
+  \coordinate[right=of adl5535_attn] (grf5010);
+
+  \draw (dds_out) to[short,-o] ($ (dds_out) + (-0.1,0) $) node[anchor=east] {DDS Out};
+
+  %\draw (dds_out) to[twoport,t=Attn,l=\SI{9}{\deci\bel}] (dds_attn);
+  \draw (dds_out) to[twoport,n=9db,l=\SI{9}{\deci\bel}] (dds_attn);
+  %\draw (dds_out) -- ++(0.4,0) -- ++(0.075,0.1) -- ++(0.15,-0.2) -- ++(0.15,0.2) -- ++(0.15,-0.2) -- ++(0.15,0.2) -- ++(0.075,-0.1) -- (dds_attn);
+  \coordinate (dds_attn_symb) at ($(dds_out)!0.5!(dds_attn)$);
+  \draw (dds_attn_symb) -- ++(0.1,0.075) -- ++(-0.2,0.15) -- ++(0.2,0.15);
+  \draw (dds_attn_symb) -- ++(-0.1,-0.075) -- ++(0.2,-0.15) -- ++(-0.2,-0.15);
+
+  \draw (dds_attn) to[amp,l=ADL5535] (adl5535);
+
+  %\draw (adl5535) to[twoport,t=Attn,l=\SI{12.2}{\deci\bel}] (adl5535_attn);
+  \draw (adl5535) to[twoport,l=\SI{12.2}{\deci\bel}] (adl5535_attn);  
+  %\draw (adl5535) -- ++(0.4,0) -- ++(0.075,0.1) -- ++(0.15,-0.2) -- ++(0.15,0.2) -- ++(0.15,-0.2) -- ++(0.15,0.2) -- ++(0.075,-0.1) -- (adl5535_attn);
+  \coordinate (tx_attn_symb) at ($(adl5535)!0.5!(adl5535_attn)$);
+  \draw (tx_attn_symb) -- ++(0.1,0.075) -- ++(-0.2,0.15) -- ++(0.2,0.15);
+  \draw (tx_attn_symb) -- ++(-0.1,-0.075) -- ++(0.2,-0.15) -- ++(-0.2,-0.15);
+
+  \draw (adl5535_attn) to[amp,l=GRF5010] (grf5010);
+
+  \node[wilkinson] at ($ (grf5010) + (1, 0) $) (power_divider) {ADP-2-1W};
+
+  \draw (power_divider.out2) to[short,-o] ($ (power_divider.out2) + (0.5,0) $) node[anchor=west] (rf_out) {TX Out};
+  \draw (power_divider.out1) to[short] ($ (power_divider.out1) + (0.5,0) $) node (mix_out) {};
+
+  \coordinate[below=of power_divider.out1] (mix_bpf);
+  \coordinate[left=of mix_bpf] (mix_attn);
+  \coordinate[left=of mix_attn] (rf_out_mix);
+
+  \draw (mix_out.center) |- (mix_bpf);
+  \draw (mix_bpf) to[bandpass,l_=JCBP-43+] (mix_attn);
+  %\draw (mix_attn) to[twoport,t=Attn,l_=\SI{2.5}{\decibel}] (rf_out_mix);
+  \draw (mix_attn) to[twoport,l_=\SI{2.5}{\decibel}] (rf_out_mix);
+  %\draw (rf_out_mix) -- ++(0.4,0) -- ++(0.075,0.1) -- ++(0.15,-0.2) -- ++(0.15,0.2) -- ++(0.15,-0.2) -- ++(0.15,0.2) -- ++(0.075,-0.1) -- (mix_attn);
+  \coordinate (mix_attn_symb) at ($(rf_out_mix)!0.5!(mix_attn)$);
+  \draw (mix_attn_symb) -- ++(0.1,0.075) -- ++(-0.2,0.15) -- ++(0.2,0.15);
+  \draw (mix_attn_symb) -- ++(-0.1,-0.075) -- ++(0.2,-0.15) -- ++(-0.2,-0.15);
+
+  \coordinate[below=1.75cm of rf_out_mix] (below_rf_out);
+
+  \coordinate (deramp_in) at (dds_out |- below_rf_out);
+  \draw (deramp_in) to[short,-o] ($ (deramp_in) + (-0.1,0) $) node[anchor=east,align=left] {Deramp\\Filter In};
+  
+  \node[mixer,right=0.25cm of deramp_in] (mix) {};
+  \draw (deramp_in) -- (mix.1);
+  \draw[latex-] (mix.4) |- (rf_out_mix);
+
+  % Create cross-point coordinate with DDS output and in-line with mixer
+  \coordinate (rf_in) at (power_divider.out2 |- mix.3);
+  \draw (rf_in) to[short,-o] (rf_in -| mix_out) node[anchor=west] {RX In};
+
+  \coordinate[left=of rf_in] (rf_in_bpf);
+  \coordinate[left=1.3cm of rf_in_bpf] (lna1);
+  \coordinate[left=1.3cm of lna1] (dsa);
+  \coordinate[left=1.3cm of dsa] (lna2);
+
+  % Start RF Input chain
+  \draw (rf_in) to[bandpass,l=JCBP-43+] (rf_in_bpf);
+  \draw (rf_in_bpf) to[amp,l_=LHA-13LN+] (lna1);
+  \draw (lna1) to[twoport,t=\scriptsize DSA,l=F1958] (dsa);
+  \draw (dsa) to[amp,l_=LHA-13LN+] (lna2);
+  %\draw (lna2) to[twoport,t=Attn,l=\SI{9}{\deci\bel}] (mix.3);
+  \draw[-latex] (lna2) to[twoport,l=\SI{9}{\deci\bel}] (mix.3);
+  %\draw (mix.3) -- ++(0.4,0) -- ++(0.075,0.1) -- ++(0.15,-0.2) -- ++(0.15,0.2) -- ++(0.15,-0.2) -- ++(0.15,0.2) -- ++(0.075,-0.1) -- (lna2);
+  \coordinate (rx_attn_symb) at ($(mix.3)!0.5!(lna2)$);
+  \draw (rx_attn_symb) -- ++(0.1,0.075) -- ++(-0.2,0.15) -- ++(0.2,0.15);
+  \draw (rx_attn_symb) -- ++(-0.1,-0.075) -- ++(0.2,-0.15) -- ++(-0.2,-0.15);
+
+  \node[anchor=north] at ($ (mix.2) + (0,-0.05) $) {ADE-1HW};
+  
+\end{circuitikz}
