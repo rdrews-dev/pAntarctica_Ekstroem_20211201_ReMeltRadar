@@ -852,31 +852,79 @@ included in this report.
 \pagebreak
 %% ******************************************************
 %% ******************************************************
-\section{cApRES: Data example, field picture, system setup and site specifics}
+\section{cApRES}
 \label{SeccApRES}
 \textbf{RE,JH}\\
 
-\textcolor{red}{The cables are not clarified yet. (lengths and colors)}
-\begin{figure}[H]
-  \includegraphics[width=\linewidth]{Figures/cApRES.pdf}
-  \caption{cApRES}
-  \label{fig_cApRES}
-\end{figure}
-
 \begin{table}[H]
-  \tiny
+  \small
   \centering
   \rowcolors{2}{gray!25}{white}
   \begin{tabular}[width=\textwidth]{c c c c c c}
     \rowcolor{gray!50}
     Name & Date & Latitude & Longitude & pRES & Note\\
     \hline
-    cApRES & 8\&9.01.2022& S71 36.9565 & W8 25.9803 & 127 & buried\\
+    cApRES & 10.01.2022& S71 36.9565 & W8 25.9803 & 127 & Buried\\
     \hline
   \end{tabular}
   \caption{cApRES}
   \label{Table_cApRES}
 \end{table}
+
+The initial cApRES setup used cables of different lengths.  One-way travel times
+for the cables were measured using an SDRKits VNA in time-domain reflectometer
+(TDR) and network analyser (VNA) modes.  The `Yellow' cable was removed from the
+initial setup and replaced with the `Double Earth' cable to reduce the
+difference in cable travel time.  Final antenna cabling and assignments are
+listed in Table \ref{TablecApRESCables}. 
+The ApRES was configured to measure every \SI{3}{\hour}, alternating between 
+mono-polarised (HH) and quad-polarised (HH, HV, VH, VV) measurements.  The RF
+attenuator was set to \SI{23}{\decibel} and the AF gain was set to 
+\SI{-14}{\decibel}.  The chirp settings are the default values with a sweep of
+\SI{200}{\mega\hertz} to \SI{400}{\mega\hertz} over a period of \SI{1}{\second}.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.6\linewidth]{Figures/CApRES/CApRES_Setup.jpg}
+  \caption{Photograph of cApRES Measurement Setup on 9\textsuperscript{th}
+  January 2022, prior to burying of ApRES and replacement of `Yellow' coaxial
+  cable.}
+  \label{FigCApRESSetupImage}
+\end{figure}
+
+\begin{figure}[H]
+  \includegraphics[width=\linewidth]{Figures/cApRES.pdf}
+  \caption{Diagram of cApRES Measurement Setup}
+  \label{fig_cApRES}
+\end{figure}
+
+\begin{table}[H]
+  \centering
+  \rowcolors{2}{gray!25}{white}
+  \begin{tabular}[width=\textwidth]{l c c c c}
+    \hline
+    \rowcolor{gray!50}
+    Cable Colour & Antenna ID & ApRES Port & Polarisation & 1-Way Travel Time (ns) \\
+    \hline
+    Blue Earth & 315 & Rx 2 & V & 26.69 \\
+    Double Earth & 309 & Rx 1 & H & 26.69 \\
+    Red & 308 & Tx 1 & H & - \\
+    Green & 307 & Tx 2 & V  & - \\
+    Yellow & Unused & - & - & 22.31 \\
+    \hline
+  \end{tabular}
+  \caption{Antenna and cabling configuration for cApRES measurement setup.  
+  One-way travel times for the `Red` and `Green' cables were not measured.}
+  \label{TablecApRESCables}
+\end{table}
+
+\begin{figure}[h]
+  \includegraphics[width=\textwidth]{Figures/CApRES/test_burst_2022-01-10_184911.png}
+  \caption{Example data from the cApRES measurement setup taken on 10\textsuperscript{th}
+  January 2022 at 18:49:11 UTC.}
+\end{figure}
+\clearpage
+
 %% ******************************************************
 %% ******************************************************
 \pagebreak
