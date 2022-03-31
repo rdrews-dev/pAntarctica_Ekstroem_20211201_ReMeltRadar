@@ -60,16 +60,16 @@ range_vec = 3e8 / (4 * (2e8) * np.sqrt(3.18)) * np.arange(0,np.size(power,1))
 #     )
 
 for idx in range(np.size(chirp_avg,0)):
-    axs[1].plot(range_vec, 20*np.log10(np.abs(power[idx,:])), label=labels[idx], color=line_colors[idx])
+    axs[1].plot(range_vec, 20*np.log10(np.abs(power[idx,:])), label=labels[idx], color=line_colors[idx],linewidth=0.2)
 axs[1].set_ylabel("Power (dBV)")
 axs[1].set_xlabel("Range (m, e_r=3.18)")
 axs[1].set_title("Range-Power")
 axs[1].set_xlim([0, 1500])
 axs[1].set_ylim([-130, 0])
 axs[1].legend(loc="upper right")
+for line in axs[1].legend().get_lines():
+    line.set_linewidth(1)
 
 fig.subplots_adjust(hspace=0.75)
 fig.set_size_inches(7.5,4)
-if ~FIG_PATH.parent.is_dir():
-    FIG_PATH.parent.mkdir()
 fig.savefig(FIG_PATH)
