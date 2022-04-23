@@ -33,7 +33,7 @@ def PlotFieldData(lregion,lprojection):
     # Define locations of external files and folders
     #------------------------------------------------------
     # Core Directory
-    CoreDirectory='/Users/rdrews/esd/data/rdrews/data_large/Data_Antarctica/RemeltRadar_2021/'
+    CoreDirectory='/Users/rdrews/esd/data/rdrews/data_large/Data_Antarctica/2021_RemeltRadar/'
     # Background grid
     BackgroundImage = "/Users/rdrews/Desktop/ReMeltRadar/QGis/ClippedBackgroundRasters/RoiRadarsat_EPSG4326.tif"
     # Grounding line used: Simplified makes it faster.
