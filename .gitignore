@@ -1,5 +1,5 @@
 #   ReMeltRadar Root .gitignore Version 0.1 - 2022-01-12
-#  
+#
 #   Auth: JD Hawkins
 #   Date: 2022-01-12
 #
@@ -15,7 +15,7 @@
 # PROJECT SPECIFIC
 
 # Generally speaking we can ignore *.log files and consider them unimportant
-# for version control 
+# for version control
 *.log
 
 # For data directories (i.e. Raw, Untouched, QGis) and top-level logging
@@ -24,7 +24,8 @@
 /Raw/*
 /Untouched/*
 /Qgis/*
-/Log/* 
+/Log/*
+/Proc/PulseEKKO/*
 
 # Environments
 .env*
