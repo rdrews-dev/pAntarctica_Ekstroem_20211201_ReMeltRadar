@@ -45,7 +45,10 @@ def PlotFieldData(lregion,lprojection):
     PEProcFolder=f'{CoreDirectory}Proc/PulseEkko/LonLatFiles/'
     # SPM Locations
     SPMLocations='/Users/rdrews/Desktop/QGis/Quantarctica3/MyDataFolder/FieldSeason_Antr21_22/Coordinates/ScienceProfiles/GpxExport/OutputBasecamp/AllSPMPoints.GPX'
-  
+    # RoverVHF
+    RoverVHF = '/Users/rdrews/Desktop/ReMeltRadar/Proc/ApRES/Rover/VHF/RoverCoordinates.lola'
+    # RoverVHF
+    RoverHF = '/Users/rdrews/Desktop/ReMeltRadar/Proc/ApRES/Rover/HF/Kinematic/kinematic_rover_rtk.lola'
     #------------------------------------------------------
     try:
         fig.grdimage(
@@ -125,6 +128,26 @@ def PlotFieldData(lregion,lprojection):
         fig.plot(data=gdf,style="c0.09c", color="purple", pen='purple',label="SPM",projection=lprojection,region=lregion)
     except:
         print(f"Ups. Something went wrong when inserting the SPM locations. Most likely {SPMLocations} does not exist.")
+        
+    #------------------------------------------------------
+    # Plot Rover VHF
+    #------------------------------------------------------
+    try:
+        print(RoverVHF)
+        ldat = np.loadtxt(RoverVHF)
+        fig.plot(x=ldat[:,0], y=ldat[:,1],style="c0.04c", color="blue", pen='blue',label="RoverVHF",projection=lprojection,region=lregion)
+    except:
+        print(f"Ups! Something went wrong when inserting the RoverVHF locations. Most likely {RoverVHF} does not exist.")
+    
+    #------------------------------------------------------
+    # Plot Rover HF
+    #------------------------------------------------------
+    try:
+        print(RoverHF)
+        ldat = np.loadtxt(RoverHF)
+        fig.plot(x=ldat[:,0], y=ldat[:,1],style="c0.04c", color="green", pen='green',label="RoverHF",projection=lprojection,region=lregion)
+    except:
+        print(f"Ups. Something went wrong when inserting the RoverVHF locations. Most likely {RoverHF} does not exist.")
 
     #------------------------------------------------------
     # Plot point locations
@@ -132,7 +155,7 @@ def PlotFieldData(lregion,lprojection):
     #Users/rdrews/Desktop/QGis/Quantarctica3/MyDataFolder/FieldSeason_Antr21_22/Coordinates/cApRES/cApRES.txt
     fig.plot(x=-8.432945419999999, y=-71.616032783333338, style="i0.2c", color="red",pen="red",label="cApRES",projection=lprojection,region=lregion)
     #/Users/rdrews/Desktop/QGis/Quantarctica3/MyDataFolder/FieldSeason_Antr21_22/Coordinates/BaseStation/BaseStation.txt
-    fig.plot(x=-8.41588, y=-71.61375, style="i0.2c",color="blue", pen="blue",label="BaseStation",projection=lprojection,region=lregion)
+    fig.plot(x=-8.41588, y=-71.61375, style="i0.2c",color="lightblue", pen="lightblue",label="BaseStation",projection=lprojection,region=lregion)
     #/Users/rdrews/Desktop/QGis/Quantarctica3/MyDataFolder/FieldSeason_Antr21_22/Coordinates/CAMP/
     fig.plot(x=-8.593387484254789, y=-71.724807328156288,style="i0.2c",color="green", pen="green",label="Camp",projection=lprojection,region=lregion)
 
