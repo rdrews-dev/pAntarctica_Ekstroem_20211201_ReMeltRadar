@@ -80,9 +80,9 @@ font = {'family' : 'normal',
         'size'   : 22}
 matplotlib.rc('font', **font)
 
-[im, xd, yd, x_range, clims] = plot_radargram(datm,x_range=(0, -1), y_range=(0, 2500),return_plotinfo="True",xdat='dist',ydat='dual')
-plt.text(0,-5,'A')
-plt.text(54,-5,'A\'')
+[im, xd, yd, x_range, clims] = plot_radargram(datm,x_range=(2000, 4000), y_range=(0, 2500),return_plotinfo="True",xdat='dist',ydat='dual')
+# plt.text(0,-5,'A')
+# plt.text(54,-5,'A\'')
 plt.savefig('../../Doc/Tex/Figures/PulseEkko/PE.png', bbox_inches='tight')
 #plt.show()
 
