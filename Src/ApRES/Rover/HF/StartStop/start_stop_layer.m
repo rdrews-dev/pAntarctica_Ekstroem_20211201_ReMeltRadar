@@ -19,8 +19,10 @@ query = ['SELECT ' ...
     'IFNULL(measurements.tags, ""), ' ...
     'measurements.latitude, ' ...
     'measurements.longitude, ' ...
-    'measurements.elevation ' ...
+    'measurements.elevation, ' ...
+    'apres_metadata.temperature_2 ' ...
     'FROM measurements ' ...
+    'INNER JOIN apres_metadata ON measurements.measurement_id=apres_metadata.measurement_id ' ...
     'WHERE measurements.tags LIKE ''%gps_type%'' ' ...
     'ORDER BY measurements.timestamp;'];
 
@@ -64,25 +66,27 @@ a = [xyz(:,1) ones(length(xyz),1)] \ xyz(:,2);
 
 imgU = [1;a(1);0] / sqrt(1+a(1)^2);
 imgV = [0;0;-1];
-imgOrigin = ApRESProcessor.PositionENU([min(xyz(:,1));min(xyz(:,1))*a(1)+a(2);0]);
+imgOrigin = [min(xyz(:,1));min(xyz(:,1))*a(1)+a(2);0];
 % imgOrigin = ApRESProcessor.PositionENU([min(xyz(:,1));min(xyz(:,1))*a(1)+a(2);-700]);
 imgRes = 4;
 % imgRes = 2;
 imgSize = round([sqrt((max(xyz(:,1))-min(xyz(:,1))).^2 + (max(xyz(:,2))-min(xyz(:,2))).^2)/imgRes(1), 900/4]);
 % imgSize = round([sqrt((max(xyz(:,1))-min(xyz(:,1))).^2 + (max(xyz(:,2))-min(xyz(:,2))).^2)/imgRes(1), (850-700)/imgRes]);
 
-imgPlaneObj = ApRESProcessor.Imaging.ImagePlane(imgSize, imgU, imgV, imgRes, imgRes, imgOrigin);
-img = ApRESProcessor.Imaging.ImagePlane(imgSize, imgU, imgV, imgRes, imgRes, imgOrigin);
+imgPlaneObj = ApRESProcessor.Imaging.ImagePlane2D(imgSize, imgU, imgV, imgRes, imgRes, imgOrigin);
+img = ApRESProcessor.Imaging.ImagePlane2D(imgSize, imgU, imgV, imgRes, imgRes, imgOrigin);
 
-velModel = ApRESProcessor.Imaging.ConstantVelocityModel(3.15, ...
+velModel = ApRESProcessor.Imaging.SmallAngleLayeredVelocityModel(1.6, ...
     50, 0.8, 10, 0.8);
+velModel.addNewLayer(2.4,-25);
+velModel.addNewLayer(3.2,-50);
 int = ApRESProcessor.Imaging.InterpolatorBeamPattern(velModel, @(x) cos(x).^4 .* cos(x/3));
 int.windowSize = 3;
 
 
 time_start = datetime;
 
-save_path = fullfile(PROC_ROOT, strcat("StopStart/interp_baseonly_", datestr(datetime, "yyyymmdd_HHMMss"), ".mat"));
+save_path = fullfile(PROC_ROOT, strcat("StopStart/interp_layer_", datestr(datetime, "yyyymmdd_HHMMss"), ".mat"));
 text = fileread([mfilename '.m']);
 save_data = struct();
 save_data.coordinate_origin = [0,0,0];
@@ -132,6 +136,11 @@ while processed < nProfiles
                 
         evalFutures(k) = parfeval(...
             @interpolateProfile, 1, filename, position, velModel, imgSize, imgU, imgV, imgRes, imgRes, imgOrigin);
+
+%         v = interpolateProfile(filename, position, velModel, imgSize, imgU, imgV, imgRes, imgRes, imgOrigin);
+%         img_data = img_data + v;
+% 
+%         processed = processed + 1;
 
     end
 
@@ -192,9 +201,10 @@ function [data] = interpolateProfile(filename, position, velModel, imgSize, imgU
     profile.rxPosition = position - imgU.' * 10;
     profile.txPosition = position - imgU.' * 50;
 
-    plane = ApRESProcessor.Imaging.ImagePlane(imgSize, imgU, imgV, imgResU, imgResV, imgOrigin);
+    plane = ApRESProcessor.Imaging.ImagePlane2D(imgSize, imgU, imgV, imgResU, imgResV, imgOrigin);
 %     int = ApRESProcessor.Imaging.InterpolatorBeamPattern(velModel);
     int = ApRESProcessor.Imaging.InterpolatorBeamPattern(velModel, @(x) cos(x).^4 .* cos(x/3));
+    int.windowSize = 5;
     int.monostaticApproximation = false;
     int.interpolate(plane, profile);
     data = plane.data;
