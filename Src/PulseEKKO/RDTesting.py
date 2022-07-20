@@ -18,7 +18,7 @@ from lib.process import concat
 # Tipps und Tricks
 # 1/ Reading Files the date in the *hd must be in mm/dd/yyyy spontaneously this is save otherwise.
 #       find . -type f -name "*.hd" -exec sed -i.bak 's/2022-Jan-02/01\/02\/2022/g' {} +
-# changes this manually. 
+# changes this manually.
 # 2/ If only a few traces are in line, then horizontal stacking fails. Remove those lines.
 ##########################################################################
 
@@ -90,11 +90,11 @@ font = {'family' : 'normal',
         'size'   : 22}
 matplotlib.rc('font', **font)
 
-[im, xd, yd, x_range, clims] = plot_radargram(datm,x_range=(0, 3000), y_range=(0, 3000),return_plotinfo="True",xdat='dist',ydat='dual')
+[im, xd, yd, x_range, clims] = plot_radargram(datm,x_range=(0, 3000), y_range=(0, 10000),return_plotinfo="True",xdat='dist',ydat='dual')
 # plt.text(0,-5,'A')
 # plt.text(54,-5,'A\'')
 plt.savefig('../../Doc/Tex/Figures/PulseEkko/PE.png', bbox_inches='tight')
-#plt.show()
+plt.show()
 
 
 
