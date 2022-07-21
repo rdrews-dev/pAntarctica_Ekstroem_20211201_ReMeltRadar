@@ -1,5 +1,5 @@
 #   /Src .gitignore Version 0.1 - 2022-01-12
-#  
+#
 #   Auth: JD Hawkins
 #   Date: 2022-01-12
 #
@@ -10,7 +10,7 @@
 #   Description
 #   ---------------------------------------------------------------------------
 #   .gitignore compiled and modified from example available at
-# 
+#
 #       https://github.com/github/gitignore/blob/main/Python.gitignore
 #
 #
@@ -37,7 +37,7 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
+#lib/
 lib64/
 parts/
 sdist/
